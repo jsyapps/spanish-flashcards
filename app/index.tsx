@@ -1,5 +1,6 @@
 import { useState } from "react";
 import {
+  Keyboard,
   KeyboardAvoidingView,
   Platform,
   SafeAreaView,
@@ -10,17 +11,20 @@ import {
   TouchableOpacity,
   View
 } from "react-native";
+import FlashcardModal from "../components/FlashcardModal";
 
 export default function Index() {
   const [inputText, setInputText] = useState("");
   const [userMessage, setUserMessage] = useState("");
   const [response, setResponse] = useState("");
+  const [modalVisible, setModalVisible] = useState(false);
 
   const sendMessage = async () => {
     if (inputText.trim()) {
       setUserMessage(inputText.trim());
       setResponse(""); // Clear previous response
       setInputText("");
+      Keyboard.dismiss(); // Close the keyboard
       
       try {
         const response = await fetch('/api/chat', {
@@ -46,12 +50,20 @@ export default function Index() {
     }
   };
 
+  const openFlashcardModal = () => {
+    setModalVisible(true);
+  };
+
+  const handleFlashcardSaved = () => {
+    setModalVisible(false);
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView 
         style={styles.container}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 95 : 0}
+        
       >
         
         
@@ -62,9 +74,17 @@ export default function Index() {
                 <Text style={styles.userMessageText}>{userMessage}</Text>
               </View>
               {response ? (
-                <View style={styles.responseBox}>
-                  <Text style={styles.responseText}>{response}</Text>
-                </View>
+                <>
+                  <View style={styles.responseBox}>
+                    <Text style={styles.responseText}>{response}</Text>
+                  </View>
+                  <TouchableOpacity 
+                    style={styles.saveButton}
+                    onPress={openFlashcardModal}
+                  >
+                    <Text style={styles.saveButtonText}>Save as Flashcard</Text>
+                  </TouchableOpacity>
+                </>
               ) : (
                 <View style={styles.loadingBox}>
                   <Text style={styles.loadingText}>Thinking...</Text>
@@ -96,6 +116,14 @@ export default function Index() {
             <Text style={styles.sendButtonText}>Send</Text>
           </TouchableOpacity>
         </View>
+
+        <FlashcardModal
+          visible={modalVisible}
+          userMessage={userMessage}
+          response={response}
+          onSave={handleFlashcardSaved}
+          onCancel={() => setModalVisible(false)}
+        />
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -190,5 +218,17 @@ const styles = StyleSheet.create({
     color: "white",
     fontWeight: "bold",
     fontSize: 16,
+  },
+  saveButton: {
+    backgroundColor: "#28a745",
+    padding: 12,
+    borderRadius: 8,
+    marginTop: 10,
+    alignItems: "center",
+  },
+  saveButtonText: {
+    color: "white",
+    fontWeight: "bold",
+    fontSize: 14,
   },
 });
