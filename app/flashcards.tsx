@@ -3,23 +3,38 @@ import { useFocusEffect } from "@react-navigation/native";
 import React, { useState } from "react";
 import {
   Alert,
-  FlatList,
   SafeAreaView,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 import { clearAllFlashcards, deleteFlashcard, Flashcard, getFlashcards } from "../utils/storage";
+import FlashcardModal from "../components/FlashcardModal";
 
 export default function FlashcardsScreen() {
   const [flashcards, setFlashcards] = useState<Flashcard[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [showBack, setShowBack] = useState(false);
+  const [editModalVisible, setEditModalVisible] = useState(false);
+
+  const shuffleArray = (array: Flashcard[]) => {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+  };
 
   const loadFlashcards = async () => {
     try {
       const cards = await getFlashcards();
-      setFlashcards(cards);
+      const shuffledCards = shuffleArray(cards);
+      setFlashcards(shuffledCards);
+      setCurrentIndex(0);
+      setShowBack(false);
     } catch (error) {
       console.error("Error loading flashcards:", error);
     } finally {
@@ -45,7 +60,19 @@ export default function FlashcardsScreen() {
           onPress: async () => {
             try {
               await deleteFlashcard(id);
-              await loadFlashcards();
+              
+              // Update the local state
+              const updatedCards = flashcards.filter(card => card.id !== id);
+              setFlashcards(updatedCards);
+              
+              // Adjust current index if necessary
+              if (updatedCards.length === 0) {
+                setCurrentIndex(0);
+              } else if (currentIndex >= updatedCards.length) {
+                setCurrentIndex(updatedCards.length - 1);
+              }
+              
+              setShowBack(false);
             } catch (error) {
               console.error("Error deleting flashcard:", error);
             }
@@ -77,28 +104,42 @@ export default function FlashcardsScreen() {
     );
   };
 
-  const renderFlashcard = ({ item }: { item: Flashcard }) => (
-    <View style={styles.flashcardItem}>
-      <View style={styles.flashcardContent}>
-        <Text style={styles.flashcardLabel}>Front:</Text>
-        <Text style={styles.flashcardText}>{item.front}</Text>
-        
-        <Text style={styles.flashcardLabel}>Back:</Text>
-        <Text style={styles.flashcardText}>{item.back}</Text>
-        
-        <Text style={styles.flashcardDate}>
-          Created: {item.createdAt.toLocaleDateString()}
-        </Text>
-      </View>
-      
-      <TouchableOpacity
-        style={styles.deleteButton}
-        onPress={() => handleDeleteFlashcard(item.id)}
-      >
-        <Ionicons name="trash" size={20} color="#dc3545" />
-      </TouchableOpacity>
-    </View>
-  );
+  const flipCard = () => {
+    setShowBack(!showBack);
+  };
+
+  const goToNextCard = () => {
+    if (currentIndex < flashcards.length - 1) {
+      setCurrentIndex(currentIndex + 1);
+      setShowBack(false);
+    }
+  };
+
+  const goToPreviousCard = () => {
+    if (currentIndex > 0) {
+      setCurrentIndex(currentIndex - 1);
+      setShowBack(false);
+    }
+  };
+
+  const shuffleCards = () => {
+    const shuffledCards = shuffleArray(flashcards);
+    setFlashcards(shuffledCards);
+    setCurrentIndex(0);
+    setShowBack(false);
+  };
+
+  const openEditModal = () => {
+    setEditModalVisible(true);
+  };
+
+  const handleEditSave = async () => {
+    setEditModalVisible(false);
+    // Reload flashcards to get the updated data
+    await loadFlashcards();
+  };
+
+  const currentCard = flashcards[currentIndex];
 
   if (loading) {
     return (
@@ -112,7 +153,7 @@ export default function FlashcardsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      
+     
 
       {flashcards.length === 0 ? (
         <View style={styles.centerContent}>
@@ -123,12 +164,85 @@ export default function FlashcardsScreen() {
           </Text>
         </View>
       ) : (
-        <FlatList
-          data={flashcards}
-          renderItem={renderFlashcard}
-          keyExtractor={(item) => item.id}
-          style={styles.list}
-          showsVerticalScrollIndicator={false}
+        <View style={styles.cardContainer}>
+          <View style={styles.cardProgress}>
+            <Text style={styles.progressText}>
+              {currentIndex + 1} of {flashcards.length}
+            </Text>
+          </View>
+
+          <View style={styles.cardWrapper}>
+            <View style={styles.cardActions}>
+              <TouchableOpacity 
+                style={styles.editCardButton} 
+                onPress={openEditModal}
+              >
+                <Ionicons name="pencil" size={18} color="#007AFF" />
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={styles.deleteCardButton} 
+                onPress={() => handleDeleteFlashcard(currentCard.id)}
+              >
+                <Ionicons name="trash" size={18} color="#dc3545" />
+              </TouchableOpacity>
+            </View>
+            
+            <TouchableOpacity style={styles.flashcard} onPress={flipCard}>
+              <Text style={styles.cardLabel}>
+                {showBack ? "Back:" : "Front:"}
+              </Text>
+              <Text style={styles.cardText}>
+                {showBack ? currentCard.back : currentCard.front}
+              </Text>
+              <Text style={styles.flipHint}>
+                {showBack ? "Tap to see front" : "Tap to see back"}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.navigationButtons}>
+            <TouchableOpacity
+              style={[styles.navButton, currentIndex === 0 && styles.navButtonDisabled]}
+              onPress={goToPreviousCard}
+              disabled={currentIndex === 0}
+            >
+              <Ionicons 
+                name="chevron-back" 
+                size={24} 
+                color={currentIndex === 0 ? "#ccc" : "#007AFF"} 
+              />
+              <Text style={[styles.navButtonText, currentIndex === 0 && styles.navButtonTextDisabled]}>
+                Previous
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.navButton, currentIndex === flashcards.length - 1 && styles.navButtonDisabled]}
+              onPress={goToNextCard}
+              disabled={currentIndex === flashcards.length - 1}
+            >
+              <Text style={[styles.navButtonText, currentIndex === flashcards.length - 1 && styles.navButtonTextDisabled]}>
+                Next
+              </Text>
+              <Ionicons 
+                name="chevron-forward" 
+                size={24} 
+                color={currentIndex === flashcards.length - 1 ? "#ccc" : "#007AFF"} 
+              />
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+
+      {currentCard && (
+        <FlashcardModal
+          visible={editModalVisible}
+          userMessage={currentCard.front}
+          response={currentCard.back}
+          onSave={handleEditSave}
+          onCancel={() => setEditModalVisible(false)}
+          editingCardId={currentCard.id}
         />
       )}
     </SafeAreaView>
@@ -140,7 +254,14 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#f5f5f5",
   },
-
+  
+  shuffleButton: {
+    backgroundColor: "#28a745",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+    marginRight: 8,
+  },
   clearButton: {
     backgroundColor: "#dc3545",
     paddingHorizontal: 12,
@@ -174,44 +295,128 @@ const styles = StyleSheet.create({
     marginTop: 8,
     textAlign: "center",
   },
-  list: {
+  cardContainer: {
     flex: 1,
-    paddingHorizontal: 15,
-    paddingVertical: 10,
+    padding: 20,
+    justifyContent: "center",
   },
-  flashcardItem: {
-    backgroundColor: "white",
-    borderRadius: 10,
-    padding: 15,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: "#ddd",
+  cardWrapper: {
+    position: "relative",
+  },
+  cardActions: {
+    position: "absolute",
+    top: 10,
+    right: 20,
+    zIndex: 1,
     flexDirection: "row",
-    alignItems: "flex-start",
+    gap: 8,
   },
-  flashcardContent: {
-    flex: 1,
-  },
-  flashcardLabel: {
-    fontSize: 14,
-    fontWeight: "bold",
-    color: "#333",
-    marginBottom: 4,
-    marginTop: 8,
-  },
-  flashcardText: {
-    fontSize: 16,
-    color: "#333",
-    lineHeight: 22,
-  },
-  flashcardDate: {
-    fontSize: 12,
-    color: "#666",
-    marginTop: 8,
-    fontStyle: "italic",
-  },
-  deleteButton: {
+  editCardButton: {
+    backgroundColor: "white",
+    borderRadius: 20,
     padding: 8,
-    marginLeft: 10,
+    borderWidth: 1,
+    borderColor: "#007AFF",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 3,
+  },
+  deleteCardButton: {
+    backgroundColor: "white",
+    borderRadius: 20,
+    padding: 8,
+    borderWidth: 1,
+    borderColor: "#dc3545",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 3,
+  },
+  cardProgress: {
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  progressText: {
+    fontSize: 16,
+    color: "#666",
+    fontWeight: "bold",
+  },
+  flashcard: {
+    backgroundColor: "white",
+    borderRadius: 15,
+    padding: 30,
+    marginHorizontal: 10,
+    minHeight: 300,
+    justifyContent: "flex-start",
+    alignItems: "center",
+    borderWidth: 2,
+    borderColor: "#007AFF",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  cardLabel: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#007AFF",
+    marginBottom: 20,
+  },
+  cardText: {
+    fontSize: 20,
+    color: "#333",
+    textAlign: "center",
+    lineHeight: 28,
+    marginVertical: 20,
+    flexShrink: 1,
+  },
+  flipHint: {
+    fontSize: 14,
+    color: "#999",
+    fontStyle: "italic",
+    marginTop: "auto",
+    paddingTop: 20,
+  },
+  navigationButtons: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 30,
+    paddingHorizontal: 20,
+  },
+  navButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    backgroundColor: "white",
+    borderWidth: 1,
+    borderColor: "#007AFF",
+  },
+  navButtonDisabled: {
+    borderColor: "#ccc",
+    backgroundColor: "#f5f5f5",
+  },
+  navButtonText: {
+    fontSize: 16,
+    color: "#007AFF",
+    fontWeight: "bold",
+    marginHorizontal: 8,
+  },
+  navButtonTextDisabled: {
+    color: "#ccc",
   },
 });

@@ -10,7 +10,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { saveFlashcard as saveFlashcardToStorage } from '../utils/storage';
+import { saveFlashcard as saveFlashcardToStorage, deleteFlashcard, Flashcard } from '../utils/storage';
 
 interface FlashcardModalProps {
   visible: boolean;
@@ -18,6 +18,7 @@ interface FlashcardModalProps {
   response: string;
   onSave: () => void;
   onCancel: () => void;
+  editingCardId?: string; // Optional ID for editing existing cards
 }
 
 export default function FlashcardModal({
@@ -26,6 +27,7 @@ export default function FlashcardModal({
   response,
   onSave,
   onCancel,
+  editingCardId,
 }: FlashcardModalProps) {
   const [editableUserMessage, setEditableUserMessage] = React.useState(userMessage);
   const [editableResponse, setEditableResponse] = React.useState(response);
@@ -37,11 +39,22 @@ export default function FlashcardModal({
 
   const handleSave = async () => {
     try {
-      await saveFlashcardToStorage(editableUserMessage, editableResponse);
-      console.log('Flashcard saved successfully:', { 
-        front: editableUserMessage, 
-        back: editableResponse 
-      });
+      if (editingCardId) {
+        // Update existing flashcard by deleting old and creating new
+        await deleteFlashcard(editingCardId);
+        await saveFlashcardToStorage(editableUserMessage, editableResponse);
+        console.log('Flashcard updated successfully:', { 
+          front: editableUserMessage, 
+          back: editableResponse 
+        });
+      } else {
+        // Create new flashcard
+        await saveFlashcardToStorage(editableUserMessage, editableResponse);
+        console.log('Flashcard saved successfully:', { 
+          front: editableUserMessage, 
+          back: editableResponse 
+        });
+      }
       onSave(); // Notify parent that save was successful
     } catch (error) {
       console.error('Failed to save flashcard:', error);
@@ -61,7 +74,9 @@ export default function FlashcardModal({
         behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
         <View style={styles.modalContent}>
-          
+          <Text style={styles.modalTitle}>
+            {editingCardId ? 'Edit Flashcard' : 'Save as Flashcard'}
+          </Text>
           
           <ScrollView showsVerticalScrollIndicator={false}>
             <Text style={styles.modalLabel}>Front:</Text>
@@ -115,9 +130,15 @@ const styles = StyleSheet.create({
     backgroundColor: "white",
     borderRadius: 15,
     padding: 20,
-    paddingTop: 0,
     width: "90%",
     maxHeight: "80%",
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 20,
+    textAlign: "center",
+    color: "#333",
   },
   
   modalLabel: {
