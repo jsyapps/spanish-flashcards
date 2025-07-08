@@ -3,14 +3,15 @@ import { useFocusEffect } from "@react-navigation/native";
 import React, { useState } from "react";
 import {
   Alert,
+  Dimensions,
   SafeAreaView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View
 } from "react-native";
-import { clearAllFlashcards, deleteFlashcard, Flashcard, getFlashcards } from "../utils/storage";
 import FlashcardModal from "../components/FlashcardModal";
+import { clearAllFlashcards, deleteFlashcard, Flashcard, getFlashcards } from "../utils/storage";
 
 export default function FlashcardsScreen() {
   const [flashcards, setFlashcards] = useState<Flashcard[]>([]);
@@ -28,11 +29,11 @@ export default function FlashcardsScreen() {
     return shuffled;
   };
 
-  const loadFlashcards = async () => {
+  const loadFlashcards = async (shouldShuffle = true) => {
     try {
       const cards = await getFlashcards();
-      const shuffledCards = shuffleArray(cards);
-      setFlashcards(shuffledCards);
+      const finalCards = shouldShuffle ? shuffleArray(cards) : cards;
+      setFlashcards(finalCards);
       setCurrentIndex(0);
       setShowBack(false);
     } catch (error) {
@@ -44,7 +45,7 @@ export default function FlashcardsScreen() {
 
   useFocusEffect(
     React.useCallback(() => {
-      loadFlashcards();
+      loadFlashcards(true); // Always shuffle when tab is focused
     }, [])
   );
 
@@ -94,7 +95,7 @@ export default function FlashcardsScreen() {
           onPress: async () => {
             try {
               await clearAllFlashcards();
-              await loadFlashcards();
+              await loadFlashcards(true);
             } catch (error) {
               console.error("Error clearing flashcards:", error);
             }
@@ -135,11 +136,14 @@ export default function FlashcardsScreen() {
 
   const handleEditSave = async () => {
     setEditModalVisible(false);
-    // Reload flashcards to get the updated data
-    await loadFlashcards();
+    // Reload flashcards to get the updated data, but don't shuffle
+    await loadFlashcards(false);
   };
 
   const currentCard = flashcards[currentIndex];
+
+
+  const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
   if (loading) {
     return (
@@ -172,29 +176,27 @@ export default function FlashcardsScreen() {
           </View>
 
           <View style={styles.cardWrapper}>
-            <View style={styles.cardActions}>
-              <TouchableOpacity 
-                style={styles.editCardButton} 
-                onPress={openEditModal}
-              >
-                <Ionicons name="pencil" size={18} color="#007AFF" />
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={styles.deleteCardButton} 
-                onPress={() => handleDeleteFlashcard(currentCard.id)}
-              >
-                <Ionicons name="trash" size={18} color="#dc3545" />
-              </TouchableOpacity>
-            </View>
-            
-            <TouchableOpacity style={styles.flashcard} onPress={flipCard}>
+            <TouchableOpacity 
+              style={[styles.flashcard, { 
+                width: screenWidth * 0.9, 
+                height: screenHeight * 0.55 
+              }]} 
+              onPress={flipCard}
+            >
               <Text style={styles.cardLabel}>
                 {showBack ? "Back:" : "Front:"}
               </Text>
-              <Text style={styles.cardText}>
-                {showBack ? currentCard.back : currentCard.front}
-              </Text>
+              {showBack ? (
+                <View style={styles.backTextContainer}>
+                  <Text style={styles.backText}>
+                    {currentCard.back}
+                  </Text>
+                </View>
+              ) : (
+                <Text style={styles.frontText}>
+                  {currentCard.front}
+                </Text>
+              )}
               <Text style={styles.flipHint}>
                 {showBack ? "Tap to see front" : "Tap to see back"}
               </Text>
@@ -212,19 +214,29 @@ export default function FlashcardsScreen() {
                 size={24} 
                 color={currentIndex === 0 ? "#ccc" : "#007AFF"} 
               />
-              <Text style={[styles.navButtonText, currentIndex === 0 && styles.navButtonTextDisabled]}>
-                Previous
-              </Text>
             </TouchableOpacity>
+
+            <View style={styles.cardActions}>
+              <TouchableOpacity 
+                style={styles.editCardButton} 
+                onPress={openEditModal}
+              >
+                <Ionicons name="pencil" size={18} color="#007AFF" />
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={styles.deleteCardButton} 
+                onPress={() => handleDeleteFlashcard(currentCard.id)}
+              >
+                <Ionicons name="trash" size={18} color="#dc3545" />
+              </TouchableOpacity>
+            </View>
 
             <TouchableOpacity
               style={[styles.navButton, currentIndex === flashcards.length - 1 && styles.navButtonDisabled]}
               onPress={goToNextCard}
               disabled={currentIndex === flashcards.length - 1}
             >
-              <Text style={[styles.navButtonText, currentIndex === flashcards.length - 1 && styles.navButtonTextDisabled]}>
-                Next
-              </Text>
               <Ionicons 
                 name="chevron-forward" 
                 size={24} 
@@ -304,42 +316,29 @@ const styles = StyleSheet.create({
     position: "relative",
   },
   cardActions: {
-    position: "absolute",
-    top: 10,
-    right: 20,
-    zIndex: 1,
     flexDirection: "row",
     gap: 8,
+    alignItems: "center",
   },
   editCardButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
     backgroundColor: "white",
-    borderRadius: 20,
-    padding: 8,
     borderWidth: 1,
     borderColor: "#007AFF",
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
-    elevation: 3,
   },
   deleteCardButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
     backgroundColor: "white",
-    borderRadius: 20,
-    padding: 8,
     borderWidth: 1,
     borderColor: "#dc3545",
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
-    elevation: 3,
   },
   cardProgress: {
     alignItems: "center",
@@ -352,22 +351,22 @@ const styles = StyleSheet.create({
   },
   flashcard: {
     backgroundColor: "white",
-    borderRadius: 15,
-    padding: 30,
-    marginHorizontal: 10,
-    minHeight: 300,
-    justifyContent: "flex-start",
+    borderRadius: 20,
+    padding: 20,
+    justifyContent: "space-between",
     alignItems: "center",
-    borderWidth: 2,
+    borderWidth: 3,
     borderColor: "#007AFF",
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
-      height: 2,
+      height: 4,
     },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 8,
+    alignSelf: "center",
+    overflow: "visible",
   },
   cardLabel: {
     fontSize: 16,
@@ -375,20 +374,38 @@ const styles = StyleSheet.create({
     color: "#007AFF",
     marginBottom: 20,
   },
-  cardText: {
-    fontSize: 20,
+  frontText: {
     color: "#333",
     textAlign: "center",
-    lineHeight: 28,
-    marginVertical: 20,
+    flex: 1,
+    textAlignVertical: "center",
+    paddingHorizontal: 10,
+    paddingVertical: 20,
+    fontWeight: "bold",
+    fontSize: 25,
+  },
+  backTextContainer: {
+    flex: 1,
+    justifyContent: "flex-start",
+    alignItems: "stretch",
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+    overflow: "visible",
+  },
+  backText: {
+    color: "#333",
+    textAlign: "left",
+    fontWeight: "normal",
+    fontSize: 16,
+    lineHeight: 22,
     flexShrink: 1,
+    flexWrap: "wrap",
   },
   flipHint: {
     fontSize: 14,
     color: "#999",
     fontStyle: "italic",
-    marginTop: "auto",
-    paddingTop: 20,
+    marginBottom: 10,
   },
   navigationButtons: {
     flexDirection: "row",

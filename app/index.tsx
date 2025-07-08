@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 import {
   Keyboard,
@@ -62,38 +63,41 @@ export default function Index() {
     <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView 
         style={styles.container}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        
+        behavior={modalVisible ? undefined : (Platform.OS === "ios" ? "padding" : "height")}
+        enabled={!modalVisible}
       >
         
         
-        <ScrollView style={styles.responseContainer}>
+        <ScrollView style={styles.responseContainer} contentContainerStyle={styles.scrollContent}>
           {userMessage ? (
             <>
-              <View style={styles.userMessageBox}>
-                <Text style={styles.userMessageText}>{userMessage}</Text>
-              </View>
               {response ? (
                 <>
-                  <View style={styles.responseBox}>
-                    <Text style={styles.responseText}>{response}</Text>
+                  <View style={styles.flashcardBox}>
+                    <TouchableOpacity 
+                      style={styles.saveButton}
+                      onPress={openFlashcardModal}
+                    >
+                      <Ionicons name="add-circle-outline" size={20} color="#28a745" />
+                    </TouchableOpacity>
+                    <Text style={styles.flashcardHeading}>{userMessage}</Text>
+                    <Text style={styles.flashcardContent}>{response}</Text>
                   </View>
-                  <TouchableOpacity 
-                    style={styles.saveButton}
-                    onPress={openFlashcardModal}
-                  >
-                    <Text style={styles.saveButtonText}>Save as Flashcard</Text>
-                  </TouchableOpacity>
                 </>
               ) : (
-                <View style={styles.loadingBox}>
-                  <Text style={styles.loadingText}>Thinking...</Text>
-                </View>
+                <>
+                  <View style={styles.userMessageBox}>
+                    <Text style={styles.userMessageText}>{userMessage}</Text>
+                  </View>
+                  <View style={styles.loadingBox}>
+                    <Text style={styles.loadingText}>Thinking...</Text>
+                  </View>
+                </>
               )}
             </>
           ) : (
             <View style={styles.emptyState}>
-              <Text style={styles.emptyStateText}>Ask a question to get started!</Text>
+              <Text style={styles.emptyStateText}>Type a word or phrase in Spanish.</Text>
             </View>
           )}
         </ScrollView>
@@ -103,7 +107,7 @@ export default function Index() {
             style={styles.textInput}
             value={inputText}
             onChangeText={setInputText}
-            placeholder="Type a message..."
+            
             placeholderTextColor="#666"
             multiline
             maxLength={500}
@@ -113,7 +117,7 @@ export default function Index() {
             onPress={sendMessage}
             disabled={!inputText.trim()}
           >
-            <Text style={styles.sendButtonText}>Send</Text>
+            <Ionicons name="paper-plane" size={24} color="white" />
           </TouchableOpacity>
         </View>
 
@@ -139,39 +143,58 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 15,
   },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: "center",
+  },
+  flashcardBox: {
+    backgroundColor: "white",
+    padding: 20,
+    borderRadius: 15,
+    borderWidth: 2,
+    borderColor: "#007AFF",
+    marginBottom: 10,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  flashcardHeading: {
+    fontSize: 22,
+    fontWeight: "bold",
+    color: "#007AFF",
+    marginBottom: 15,
+    textAlign: "left",
+  },
+  flashcardContent: {
+    fontSize: 16,
+    lineHeight: 24,
+    color: "#333",
+  },
   userMessageBox: {
     backgroundColor: "#007AFF",
     padding: 15,
-    borderRadius: 10,
+    borderRadius: 20,
     marginBottom: 10,
-    
-    maxWidth: "100%",
+    alignSelf: "flex-end",
+    maxWidth: "80%",
   },
   userMessageText: {
     fontSize: 16,
     lineHeight: 24,
     color: "white",
   },
-  responseBox: {
-    backgroundColor: "white",
-    padding: 15,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#ddd",
-  
-    maxWidth: "100%",
-  },
-  responseText: {
-    fontSize: 16,
-    lineHeight: 24,
-    color: "#333",
-  },
   loadingBox: {
     backgroundColor: "#f0f0f0",
     padding: 15,
-    borderRadius: 10,
+    borderRadius: 20,
     alignSelf: "flex-start",
     maxWidth: "80%",
+    marginBottom: 10,
   },
   loadingText: {
     fontSize: 16,
@@ -210,8 +233,8 @@ const styles = StyleSheet.create({
   },
   sendButton: {
     backgroundColor: "#007AFF",
-    paddingHorizontal: 20,
-    paddingVertical: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 8,
     borderRadius: 20,
   },
   sendButtonText: {
@@ -220,15 +243,17 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   saveButton: {
-    backgroundColor: "#28a745",
-    padding: 12,
-    borderRadius: 8,
-    marginTop: 10,
-    alignItems: "center",
+    position: "absolute",
+    top: 15,
+    right: 15,
+    padding: 8,
+    backgroundColor: "transparent",
+    borderWidth: 0,
+    zIndex: 1,
   },
   saveButtonText: {
-    color: "white",
+    color: "#28a745",
     fontWeight: "bold",
-    fontSize: 14,
+    fontSize: 16,
   },
 });

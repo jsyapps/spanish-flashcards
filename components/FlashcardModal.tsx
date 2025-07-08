@@ -10,7 +10,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { saveFlashcard as saveFlashcardToStorage, deleteFlashcard, Flashcard } from '../utils/storage';
+import { deleteFlashcard, saveFlashcard as saveFlashcardToStorage } from '../utils/storage';
 
 interface FlashcardModalProps {
   visible: boolean;
@@ -72,6 +72,7 @@ export default function FlashcardModal({
       <KeyboardAvoidingView 
         style={styles.modalOverlay}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? -50 : -30}
       >
         <View style={styles.modalContent}>
           <Text style={styles.modalTitle}>

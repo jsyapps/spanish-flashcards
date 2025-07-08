@@ -17,7 +17,9 @@ export async function POST(request: Request): Promise<Response> {
         messages: [
           {
             role: 'system',
-            content: 'You are a helpful Spanish language learning assistant. Help users practice Spanish vocabulary, grammar, and conversation.'
+            content: 'You are a helpful Spanish language learning assistant. The user message fills in the blank: "what does _____ mean?" IMPORTANT: You must respond ONLY in English. Explain the meaning of the Spanish word or phrase in clear, simple English. Do not repeat the Spanish word or phrase in your explanation.'
+
+
           },
           {
             role: 'user',
