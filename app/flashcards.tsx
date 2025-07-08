@@ -18,6 +18,7 @@ export default function FlashcardsScreen() {
   const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showBack, setShowBack] = useState(false);
+  const [showAllBacks, setShowAllBacks] = useState(false);
   const [editModalVisible, setEditModalVisible] = useState(false);
 
   const shuffleArray = (array: Flashcard[]) => {
@@ -35,7 +36,7 @@ export default function FlashcardsScreen() {
       const finalCards = shouldShuffle ? shuffleArray(cards) : cards;
       setFlashcards(finalCards);
       setCurrentIndex(0);
-      setShowBack(false);
+      setShowBack(showAllBacks);
     } catch (error) {
       console.error("Error loading flashcards:", error);
     } finally {
@@ -73,7 +74,7 @@ export default function FlashcardsScreen() {
                 setCurrentIndex(updatedCards.length - 1);
               }
               
-              setShowBack(false);
+              setShowBack(showAllBacks);
             } catch (error) {
               console.error("Error deleting flashcard:", error);
             }
@@ -109,17 +110,22 @@ export default function FlashcardsScreen() {
     setShowBack(!showBack);
   };
 
+  const flipAllCards = () => {
+    setShowAllBacks(!showAllBacks);
+    setShowBack(!showAllBacks);
+  };
+
   const goToNextCard = () => {
     if (currentIndex < flashcards.length - 1) {
       setCurrentIndex(currentIndex + 1);
-      setShowBack(false);
+      setShowBack(showAllBacks);
     }
   };
 
   const goToPreviousCard = () => {
     if (currentIndex > 0) {
       setCurrentIndex(currentIndex - 1);
-      setShowBack(false);
+      setShowBack(showAllBacks);
     }
   };
 
@@ -127,7 +133,7 @@ export default function FlashcardsScreen() {
     const shuffledCards = shuffleArray(flashcards);
     setFlashcards(shuffledCards);
     setCurrentIndex(0);
-    setShowBack(false);
+    setShowBack(showAllBacks);
   };
 
   const openEditModal = () => {
@@ -216,21 +222,26 @@ export default function FlashcardsScreen() {
               />
             </TouchableOpacity>
 
-            <View style={styles.cardActions}>
-              <TouchableOpacity 
-                style={styles.editCardButton} 
-                onPress={openEditModal}
-              >
-                <Ionicons name="pencil" size={18} color="#007AFF" />
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={styles.deleteCardButton} 
-                onPress={() => handleDeleteFlashcard(currentCard.id)}
-              >
-                <Ionicons name="trash" size={18} color="#dc3545" />
-              </TouchableOpacity>
-            </View>
+            <TouchableOpacity 
+              style={styles.flipCardButton} 
+              onPress={flipAllCards}
+            >
+              <Ionicons name="sync" size={18} color="#007AFF" />
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={styles.editCardButton} 
+              onPress={openEditModal}
+            >
+              <Ionicons name="pencil" size={18} color="#007AFF" />
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={styles.deleteCardButton} 
+              onPress={() => handleDeleteFlashcard(currentCard.id)}
+            >
+              <Ionicons name="trash" size={18} color="#dc3545" />
+            </TouchableOpacity>
 
             <TouchableOpacity
               style={[styles.navButton, currentIndex === flashcards.length - 1 && styles.navButtonDisabled]}
@@ -317,8 +328,18 @@ const styles = StyleSheet.create({
   },
   cardActions: {
     flexDirection: "row",
-    gap: 8,
+    gap: 16,
     alignItems: "center",
+  },
+  flipCardButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    backgroundColor: "white",
+    borderWidth: 1,
+    borderColor: "#007AFF",
   },
   editCardButton: {
     flexDirection: "row",
@@ -396,7 +417,7 @@ const styles = StyleSheet.create({
     color: "#333",
     textAlign: "left",
     fontWeight: "normal",
-    fontSize: 16,
+    fontSize: 18,
     lineHeight: 22,
     flexShrink: 1,
     flexWrap: "wrap",
@@ -409,7 +430,9 @@ const styles = StyleSheet.create({
   },
   navigationButtons: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 16,
     marginTop: 30,
     paddingHorizontal: 20,
   },
