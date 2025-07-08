@@ -1,32 +1,18 @@
-import { Ionicons } from "@expo/vector-icons";
-import { Tabs } from "expo-router";
+import { Stack } from "expo-router";
 
 export default function RootLayout() {
   return (
-    <Tabs
+    <Stack
       screenOptions={{
-        tabBarActiveTintColor: "#007AFF",
-        headerShown: false,
+        headerShown: false, // We'll handle headers in individual screens or nested navigators
       }}
     >
-      <Tabs.Screen
-        name="index"
+      <Stack.Screen 
+        name="(tabs)" 
         options={{
-          title: "Ask",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="chatbubble" size={size} color={color} />
-          ),
+          headerShown: false,
         }}
       />
-      <Tabs.Screen
-        name="flashcards"
-        options={{
-          title: "Flashcards",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="library" size={size} color={color} />
-          ),
-        }}
-      />
-    </Tabs>
+    </Stack>
   );
 }

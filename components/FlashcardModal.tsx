@@ -10,7 +10,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { deleteFlashcard, saveFlashcard as saveFlashcardToStorage } from '../utils/storage';
+import { deleteFlashcard, saveFlashcard as saveFlashcardToStorage, saveFlashcardToDeck } from '../utils/storage';
 
 interface FlashcardModalProps {
   visible: boolean;
@@ -19,6 +19,7 @@ interface FlashcardModalProps {
   onSave: () => void;
   onCancel: () => void;
   editingCardId?: string; // Optional ID for editing existing cards
+  selectedDeckIds?: string[]; // Array of deck IDs to save to
 }
 
 export default function FlashcardModal({
@@ -28,6 +29,7 @@ export default function FlashcardModal({
   onSave,
   onCancel,
   editingCardId,
+  selectedDeckIds = [],
 }: FlashcardModalProps) {
   const [editableUserMessage, setEditableUserMessage] = React.useState(userMessage);
   const [editableResponse, setEditableResponse] = React.useState(response);
@@ -42,17 +44,38 @@ export default function FlashcardModal({
       if (editingCardId) {
         // Update existing flashcard by deleting old and creating new
         await deleteFlashcard(editingCardId);
-        await saveFlashcardToStorage(editableUserMessage, editableResponse);
+        
+        if (selectedDeckIds.length > 0) {
+          // Save to each selected deck
+          for (const deckId of selectedDeckIds) {
+            await saveFlashcardToDeck(editableUserMessage, editableResponse, deckId);
+          }
+        } else {
+          // Fallback to legacy save if no decks selected
+          await saveFlashcardToStorage(editableUserMessage, editableResponse);
+        }
+        
         console.log('Flashcard updated successfully:', { 
           front: editableUserMessage, 
-          back: editableResponse 
+          back: editableResponse,
+          decks: selectedDeckIds
         });
       } else {
         // Create new flashcard
-        await saveFlashcardToStorage(editableUserMessage, editableResponse);
+        if (selectedDeckIds.length > 0) {
+          // Save to each selected deck
+          for (const deckId of selectedDeckIds) {
+            await saveFlashcardToDeck(editableUserMessage, editableResponse, deckId);
+          }
+        } else {
+          // Fallback to legacy save if no decks selected
+          await saveFlashcardToStorage(editableUserMessage, editableResponse);
+        }
+        
         console.log('Flashcard saved successfully:', { 
           front: editableUserMessage, 
-          back: editableResponse 
+          back: editableResponse,
+          decks: selectedDeckIds
         });
       }
       onSave(); // Notify parent that save was successful

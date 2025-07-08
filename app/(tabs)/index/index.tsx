@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useState } from "react";
+import { useFocusEffect } from "@react-navigation/native";
+import React, { useState } from "react";
 import {
   Keyboard,
   KeyboardAvoidingView,
@@ -12,13 +13,47 @@ import {
   TouchableOpacity,
   View
 } from "react-native";
-import FlashcardModal from "../components/FlashcardModal";
+import FlashcardModal from "../../../components/FlashcardModal";
+import { Deck, getDecks, initializeStorage } from "../../../utils/storage";
 
 export default function Index() {
   const [inputText, setInputText] = useState("");
   const [userMessage, setUserMessage] = useState("");
   const [response, setResponse] = useState("");
   const [modalVisible, setModalVisible] = useState(false);
+  const [decks, setDecks] = useState<Deck[]>([]);
+  const [selectedDecks, setSelectedDecks] = useState<Set<string>>(new Set());
+
+  const loadDecks = async () => {
+    try {
+      await initializeStorage();
+      const deckList = await getDecks();
+      setDecks(deckList);
+      
+      // Auto-select the first deck if available and none selected
+      if (deckList.length > 0 && selectedDecks.size === 0) {
+        setSelectedDecks(new Set([deckList[0].id]));
+      }
+    } catch (error) {
+      console.error("Error loading decks:", error);
+    }
+  };
+
+  useFocusEffect(
+    React.useCallback(() => {
+      loadDecks();
+    }, [])
+  );
+
+  const toggleDeckSelection = (deckId: string) => {
+    const newSelection = new Set(selectedDecks);
+    if (newSelection.has(deckId)) {
+      newSelection.delete(deckId);
+    } else {
+      newSelection.add(deckId);
+    }
+    setSelectedDecks(newSelection);
+  };
 
   const sendMessage = async () => {
     if (inputText.trim()) {
@@ -57,6 +92,10 @@ export default function Index() {
 
   const handleFlashcardSaved = () => {
     setModalVisible(false);
+    // Reset to auto-select first deck for next flashcard
+    if (decks.length > 0) {
+      setSelectedDecks(new Set([decks[0].id]));
+    }
   };
 
   return (
@@ -83,6 +122,35 @@ export default function Index() {
                     <Text style={styles.flashcardHeading}>{userMessage}</Text>
                     <Text style={styles.flashcardContent}>{response}</Text>
                   </View>
+                  
+                  {decks.length > 0 && (
+                    <View style={styles.deckSelectionContainer}>
+                      <Text style={styles.deckSelectionTitle}>Save to decks:</Text>
+                      {decks.map((deck) => (
+                        <TouchableOpacity
+                          key={deck.id}
+                          style={styles.deckCheckItem}
+                          onPress={() => toggleDeckSelection(deck.id)}
+                        >
+                          <View style={styles.checkboxContainer}>
+                            <View style={[
+                              styles.checkbox,
+                              selectedDecks.has(deck.id) && styles.checkboxSelected
+                            ]}>
+                              {selectedDecks.has(deck.id) && (
+                                <Ionicons name="checkmark" size={16} color="white" />
+                              )}
+                            </View>
+                            <View style={[
+                              styles.deckColorIndicator,
+                              { backgroundColor: deck.color || "#007AFF" }
+                            ]} />
+                            <Text style={styles.deckCheckText}>{deck.name}</Text>
+                          </View>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  )}
                 </>
               ) : (
                 <>
@@ -127,6 +195,7 @@ export default function Index() {
           response={response}
           onSave={handleFlashcardSaved}
           onCancel={() => setModalVisible(false)}
+          selectedDeckIds={Array.from(selectedDecks)}
         />
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -255,5 +324,58 @@ const styles = StyleSheet.create({
     color: "#28a745",
     fontWeight: "bold",
     fontSize: 16,
+  },
+  deckSelectionContainer: {
+    backgroundColor: "white",
+    borderRadius: 12,
+    padding: 16,
+    marginTop: 12,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  deckSelectionTitle: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#333",
+    marginBottom: 12,
+  },
+  deckCheckItem: {
+    marginBottom: 8,
+  },
+  checkboxContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 8,
+  },
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderRadius: 4,
+    borderWidth: 2,
+    borderColor: "#007AFF",
+    marginRight: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "transparent",
+  },
+  checkboxSelected: {
+    backgroundColor: "#007AFF",
+  },
+  deckColorIndicator: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    marginRight: 8,
+  },
+  deckCheckText: {
+    fontSize: 16,
+    color: "#333",
+    flex: 1,
   },
 });

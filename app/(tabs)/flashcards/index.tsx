@@ -1,25 +1,40 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useFocusEffect } from "@react-navigation/native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import React, { useState } from "react";
 import {
   Alert,
   Dimensions,
+  Modal,
   SafeAreaView,
+  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View
 } from "react-native";
-import FlashcardModal from "../components/FlashcardModal";
-import { clearAllFlashcards, deleteFlashcard, Flashcard, getFlashcards } from "../utils/storage";
+import FlashcardModal from "../../../components/FlashcardModal";
+import { 
+  clearAllFlashcards, 
+  deleteFlashcard, 
+  Deck,
+  Flashcard, 
+  getDecks,
+  getFlashcards,
+  getFlashcardsByDeck,
+  initializeStorage
+} from "../../../utils/storage";
 
 export default function FlashcardsScreen() {
+  const navigation = useNavigation();
   const [flashcards, setFlashcards] = useState<Flashcard[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showBack, setShowBack] = useState(false);
   const [showAllBacks, setShowAllBacks] = useState(false);
   const [editModalVisible, setEditModalVisible] = useState(false);
+  const [decks, setDecks] = useState<Deck[]>([]);
+  const [selectedDeckId, setSelectedDeckId] = useState<string | null>(null); // null means "All"
+  const [dropdownVisible, setDropdownVisible] = useState(false);
 
   const shuffleArray = (array: Flashcard[]) => {
     const shuffled = [...array];
@@ -30,9 +45,28 @@ export default function FlashcardsScreen() {
     return shuffled;
   };
 
+  const loadDecks = async () => {
+    try {
+      await initializeStorage();
+      const deckList = await getDecks();
+      setDecks(deckList);
+    } catch (error) {
+      console.error("Error loading decks:", error);
+    }
+  };
+
   const loadFlashcards = async (shouldShuffle = true) => {
     try {
-      const cards = await getFlashcards();
+      let cards: Flashcard[];
+      
+      if (selectedDeckId === null) {
+        // Load all flashcards
+        cards = await getFlashcards();
+      } else {
+        // Load flashcards from specific deck
+        cards = await getFlashcardsByDeck(selectedDeckId);
+      }
+      
       const finalCards = shouldShuffle ? shuffleArray(cards) : cards;
       setFlashcards(finalCards);
       setCurrentIndex(0);
@@ -46,9 +80,32 @@ export default function FlashcardsScreen() {
 
   useFocusEffect(
     React.useCallback(() => {
+      loadDecks();
       loadFlashcards(true); // Always shuffle when tab is focused
-    }, [])
+    }, [selectedDeckId])
   );
+
+  // Reload flashcards when deck selection changes
+  React.useEffect(() => {
+    if (decks.length > 0) {
+      loadFlashcards(true);
+    }
+  }, [selectedDeckId]);
+
+  // Set up header with deck selector
+  React.useLayoutEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <TouchableOpacity
+          style={styles.headerDeckSelector}
+          onPress={() => setDropdownVisible(true)}
+        >
+          <Text style={styles.headerDeckSelectorText}>{getSelectedDeckName()}</Text>
+          <Ionicons name="chevron-down" size={16} color="#007AFF" />
+        </TouchableOpacity>
+      ),
+    });
+  }, [navigation, selectedDeckId, decks]);
 
   const handleDeleteFlashcard = async (id: string) => {
     Alert.alert(
@@ -146,6 +203,17 @@ export default function FlashcardsScreen() {
     await loadFlashcards(false);
   };
 
+  const handleDeckSelect = (deckId: string | null) => {
+    setSelectedDeckId(deckId);
+    setDropdownVisible(false);
+  };
+
+  const getSelectedDeckName = () => {
+    if (selectedDeckId === null) return "All Decks";
+    const deck = decks.find(d => d.id === selectedDeckId);
+    return deck ? deck.name : "All Decks";
+  };
+
   const currentCard = flashcards[currentIndex];
 
 
@@ -163,8 +231,6 @@ export default function FlashcardsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-     
-
       {flashcards.length === 0 ? (
         <View style={styles.centerContent}>
           <Ionicons name="library-outline" size={64} color="#ccc" />
@@ -268,6 +334,69 @@ export default function FlashcardsScreen() {
           editingCardId={currentCard.id}
         />
       )}
+
+      {/* Deck Selection Dropdown */}
+      <Modal
+        visible={dropdownVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setDropdownVisible(false)}
+      >
+        <TouchableOpacity
+          style={styles.dropdownOverlay}
+          activeOpacity={1}
+          onPress={() => setDropdownVisible(false)}
+        >
+          <View style={styles.dropdownContainer}>
+            <ScrollView style={styles.dropdownList}>
+              <TouchableOpacity
+                style={[
+                  styles.dropdownItem,
+                  selectedDeckId === null && styles.dropdownItemSelected
+                ]}
+                onPress={() => handleDeckSelect(null)}
+              >
+                <Text style={[
+                  styles.dropdownItemText,
+                  selectedDeckId === null && styles.dropdownItemTextSelected
+                ]}>
+                  All Decks
+                </Text>
+                {selectedDeckId === null && (
+                  <Ionicons name="checkmark" size={16} color="#007AFF" />
+                )}
+              </TouchableOpacity>
+              
+              {decks.map((deck) => (
+                <TouchableOpacity
+                  key={deck.id}
+                  style={[
+                    styles.dropdownItem,
+                    selectedDeckId === deck.id && styles.dropdownItemSelected
+                  ]}
+                  onPress={() => handleDeckSelect(deck.id)}
+                >
+                  <View style={styles.dropdownItemContent}>
+                    <View style={[
+                      styles.dropdownDeckColor,
+                      { backgroundColor: deck.color || "#007AFF" }
+                    ]} />
+                    <Text style={[
+                      styles.dropdownItemText,
+                      selectedDeckId === deck.id && styles.dropdownItemTextSelected
+                    ]}>
+                      {deck.name}
+                    </Text>
+                  </View>
+                  {selectedDeckId === deck.id && (
+                    <Ionicons name="checkmark" size={16} color="#007AFF" />
+                  )}
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -458,5 +587,93 @@ const styles = StyleSheet.create({
   },
   navButtonTextDisabled: {
     color: "#ccc",
+  },
+  deckSelector: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: "#f8f9fa",
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#007AFF",
+    gap: 6,
+  },
+  deckSelectorText: {
+    fontSize: 14,
+    color: "#007AFF",
+    fontWeight: "500",
+  },
+  dropdownOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  dropdownContainer: {
+    backgroundColor: "white",
+    borderRadius: 12,
+    width: "80%",
+    maxHeight: 300,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 8,
+  },
+  dropdownList: {
+    maxHeight: 280,
+  },
+  dropdownItem: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f0f0f0",
+  },
+  dropdownItemSelected: {
+    backgroundColor: "#f0f8ff",
+  },
+  dropdownItemContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+  },
+  dropdownDeckColor: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    marginRight: 10,
+  },
+  dropdownItemText: {
+    fontSize: 16,
+    color: "#333",
+    flex: 1,
+  },
+  dropdownItemTextSelected: {
+    color: "#007AFF",
+    fontWeight: "500",
+  },
+  headerDeckSelector: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: "#f8f9fa",
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#007AFF",
+    gap: 6,
+    marginRight: 16,
+  },
+  headerDeckSelectorText: {
+    fontSize: 14,
+    color: "#007AFF",
+    fontWeight: "500",
   },
 });
