@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import React, { useState } from "react";
 import {
+  Alert,
   Keyboard,
   KeyboardAvoidingView,
   Platform,
@@ -14,6 +15,8 @@ import {
   View
 } from "react-native";
 import FlashcardModal from "../../../components/FlashcardModal";
+import { BORDER_RADIUS, COLORS, FONT_SIZE, SPACING } from "../../../constants/theme";
+import { commonStyles } from "../../../styles/common";
 import { Deck, getDecks, initializeStorage, saveFlashcardToDeck } from "../../../utils/storage";
 
 export default function Index() {
@@ -27,7 +30,7 @@ export default function Index() {
   const [decks, setDecks] = useState<Deck[]>([]);
   const [selectedDecks, setSelectedDecks] = useState<Set<string>>(new Set());
 
-  const loadDecks = async () => {
+  const loadDecks = React.useCallback(async () => {
     try {
       await initializeStorage();
       const deckList = await getDecks();
@@ -40,12 +43,12 @@ export default function Index() {
     } catch (error) {
       console.error("Error loading decks:", error);
     }
-  };
+  }, [selectedDecks.size]);
 
   useFocusEffect(
     React.useCallback(() => {
       loadDecks();
-    }, [])
+    }, [loadDecks])
   );
 
   const toggleDeckSelection = (deckId: string) => {
@@ -94,9 +97,6 @@ export default function Index() {
     }
   };
 
-  const openFlashcardModal = () => {
-    setModalVisible(true);
-  };
 
   const handleSaveToDeck = async () => {
     if (editableFront.trim() && editableBack.trim() && selectedDecks.size > 0) {
@@ -106,39 +106,58 @@ export default function Index() {
           await saveFlashcardToDeck(editableFront.trim(), editableBack.trim(), deckId);
         }
         
-        console.log('Flashcard saved successfully:', { 
-          front: editableFront.trim(), 
-          back: editableBack.trim(),
-          decks: Array.from(selectedDecks)
+        // Get deck names for alert
+        const selectedDeckNames = Array.from(selectedDecks).map(deckId => {
+          const deck = decks.find(d => d.id === deckId);
+          return deck ? deck.name : 'Unknown Deck';
         });
         
-        // Reset to auto-select first deck for next flashcard
-        if (decks.length > 0) {
-          setSelectedDecks(new Set([decks[0].id]));
-        }
+        const deckText = selectedDeckNames.length === 1 
+          ? selectedDeckNames[0] 
+          : selectedDeckNames.join(', ');
+        
+        // Show success alert
+        Alert.alert(
+          "Card Saved!",
+          `Flashcard saved to ${deckText}`,
+          [
+            {
+              text: "OK",
+              onPress: () => {
+                // Reset to original screen
+                setUserMessage("");
+                setResponse("");
+                setEditableFront("");
+                setEditableBack("");
+                
+                // Reset to auto-select first deck for next flashcard
+                if (decks.length > 0) {
+                  setSelectedDecks(new Set([decks[0].id]));
+                }
+              }
+            }
+          ]
+        );
       } catch (error) {
         console.error('Error saving flashcard:', error);
-        // Could add error handling/toast here
+        Alert.alert(
+          "Error",
+          "Failed to save flashcard. Please try again.",
+          [{ text: "OK" }]
+        );
       }
     }
   };
 
-  const handleFlashcardSaved = () => {
-    setModalVisible(false);
-    // Reset to auto-select first deck for next flashcard
-    if (decks.length > 0) {
-      setSelectedDecks(new Set([decks[0].id]));
-    }
-  };
 
   return (
     <KeyboardAvoidingView 
-      style={styles.container}
+      style={commonStyles.container}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
       enabled={isMainInputFocused}
     >
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={commonStyles.container}>
         
         
         <ScrollView style={styles.responseContainer} contentContainerStyle={styles.scrollContent}>
@@ -146,19 +165,19 @@ export default function Index() {
             <>
               {response ? (
                 <>
-                  <View style={styles.contentContainer}>
-                    <Text style={[styles.inputLabel, { marginTop: 0 }]}>Front:</Text>
+                  <View style={commonStyles.card}>
+                    <Text style={[commonStyles.modalLabel, { marginTop: 0 }]}>Front:</Text>
                     <TextInput
-                      style={styles.editableFrontInput}
+                      style={commonStyles.textInput}
                       value={editableFront}
                       onChangeText={setEditableFront}
                       multiline
                       textAlignVertical="top"
                     />
                     
-                    <Text style={styles.inputLabel}>Back:</Text>
+                    <Text style={commonStyles.modalLabel}>Back:</Text>
                     <TextInput
-                      style={styles.editableInput}
+                      style={commonStyles.multilineInput}
                       value={editableBack}
                       onChangeText={setEditableBack}
                       multiline
@@ -176,26 +195,26 @@ export default function Index() {
                           >
                             <View style={styles.checkboxContainer}>
                               <View style={[
-                                styles.checkbox,
-                                selectedDecks.has(deck.id) && styles.checkboxSelected
+                                commonStyles.checkbox,
+                                selectedDecks.has(deck.id) && commonStyles.checkboxSelected
                               ]}>
                                 {selectedDecks.has(deck.id) && (
-                                  <Ionicons name="checkmark" size={16} color="white" />
+                                  <Ionicons name="checkmark" size={16} color={COLORS.WHITE} />
                                 )}
                               </View>
                               <View style={[
                                 styles.deckColorIndicator,
-                                { backgroundColor: deck.color || "#007AFF" }
+                                { backgroundColor: deck.color || COLORS.PRIMARY }
                               ]} />
                               <Text style={styles.deckCheckText}>{deck.name}</Text>
                             </View>
                           </TouchableOpacity>
                         ))}
                         <TouchableOpacity 
-                          style={styles.saveTextButton}
+                          style={[commonStyles.primaryButton, { marginTop: SPACING.XL }]}
                           onPress={handleSaveToDeck}
                         >
-                          <Text style={styles.saveButtonText}>Save to Deck</Text>
+                          <Text style={commonStyles.primaryButtonText}>Save to Deck</Text>
                         </TouchableOpacity>
                       </>
                     )}
@@ -213,20 +232,20 @@ export default function Index() {
               )}
             </>
           ) : (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyStateText}>Type a word or phrase in Spanish.</Text>
+            <View style={commonStyles.centerContent}>
+              <Text style={commonStyles.emptyText}>Type a word or phrase in Spanish.</Text>
             </View>
           )}
         </ScrollView>
         
         <View style={styles.inputContainer}>
           <TextInput
-            style={styles.textInput}
+            style={[commonStyles.textInput, styles.mainInput]}
             value={inputText}
             onChangeText={setInputText}
             onFocus={() => setIsMainInputFocused(true)}
             onBlur={() => setIsMainInputFocused(false)}
-            placeholderTextColor="#666"
+            placeholderTextColor={COLORS.GRAY}
             multiline
             maxLength={500}
           />
@@ -235,7 +254,7 @@ export default function Index() {
             onPress={sendMessage}
             disabled={!inputText.trim()}
           >
-            <Ionicons name="paper-plane" size={24} color="white" />
+            <Ionicons name="paper-plane" size={24} color={COLORS.WHITE} />
           </TouchableOpacity>
         </View>
 
@@ -243,9 +262,12 @@ export default function Index() {
           visible={modalVisible}
           userMessage={editableFront}
           response={editableBack}
-          onSave={handleFlashcardSaved}
+          onSave={(front, back) => {
+            setEditableFront(front);
+            setEditableBack(back);
+            setModalVisible(false);
+          }}
           onCancel={() => setModalVisible(false)}
-          selectedDeckIds={Array.from(selectedDecks)}
         />
       </SafeAreaView>
     </KeyboardAvoidingView>
@@ -253,169 +275,81 @@ export default function Index() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#f5f5f5",
-  },
-  
   responseContainer: {
     flex: 1,
-    padding: 15,
+    padding: SPACING.LG,
   },
   scrollContent: {
     flexGrow: 1,
   },
-  contentContainer: {
-    backgroundColor: "white",
-    padding: 20,
-    borderRadius: 15,
-    marginBottom: 10,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  inputLabel: {
-    fontSize: 16,
-    fontWeight: "bold",
-    marginBottom: 8,
-    marginTop: 15,
-    color: "#333",
-  },
-  editableInput: {
-    borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-    minHeight: 80,
-    backgroundColor: "#f9f9f9",
-  },
-  editableFrontInput: {
-    borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-    backgroundColor: "#f9f9f9",
-  },
   userMessageBox: {
-    backgroundColor: "#007AFF",
-    padding: 15,
-    borderRadius: 20,
-    marginBottom: 10,
+    backgroundColor: COLORS.PRIMARY,
+    padding: SPACING.LG,
+    borderRadius: BORDER_RADIUS.XXL,
+    marginBottom: SPACING.SM,
     alignSelf: "flex-end",
     maxWidth: "80%",
   },
   userMessageText: {
-    fontSize: 16,
+    fontSize: FONT_SIZE.LG,
     lineHeight: 24,
-    color: "white",
+    color: COLORS.WHITE,
   },
   loadingBox: {
-    backgroundColor: "#f0f0f0",
-    padding: 15,
-    borderRadius: 20,
+    backgroundColor: COLORS.LOADING_BACKGROUND,
+    padding: SPACING.LG,
+    borderRadius: BORDER_RADIUS.XXL,
     alignSelf: "flex-start",
     maxWidth: "80%",
-    marginBottom: 10,
+    marginBottom: SPACING.SM,
   },
   loadingText: {
-    fontSize: 16,
+    fontSize: FONT_SIZE.LG,
     lineHeight: 24,
-    color: "#666",
+    color: COLORS.GRAY,
     fontStyle: "italic",
-  },
-  emptyState: {
-    flex: 1,
-    justifyContent: "flex-start",
-    alignItems: "center",
-    paddingTop: 50,
-  },
-  emptyStateText: {
-    fontSize: 16,
-    color: "#666",
-    textAlign: "center",
   },
   inputContainer: {
     flexDirection: "row",
-    padding: 15,
-    backgroundColor: "white",
+    padding: SPACING.LG,
+    backgroundColor: COLORS.WHITE,
     borderTopWidth: 1,
-    borderTopColor: "#ddd",
+    borderTopColor: COLORS.BORDER,
     alignItems: "flex-end",
+    paddingRight: SPACING.LG,
   },
-  textInput: {
+  mainInput: {
     flex: 1,
-    borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 20,
-    paddingHorizontal: 15,
-    paddingVertical: 10,
-    marginRight: 10,
+    borderRadius: BORDER_RADIUS.XXL,
+    paddingHorizontal: SPACING.LG,
+    paddingVertical: SPACING.SM,
+    marginRight: SPACING.SM,
     maxHeight: 100,
-    fontSize: 16,
+    minWidth: 0, // Prevents text overflow
   },
   sendButton: {
-    backgroundColor: "#007AFF",
-    paddingHorizontal: 8,
-    paddingVertical: 8,
-    borderRadius: 20,
+    backgroundColor: COLORS.PRIMARY,
+    paddingHorizontal: SPACING.SM,
+    paddingVertical: SPACING.SM,
+    borderRadius: BORDER_RADIUS.XXL,
   },
-  sendButtonText: {
-    color: "white",
-    fontWeight: "bold",
-    fontSize: 16,
-  },
-  saveTextButton: {
-    backgroundColor: "#007AFF",
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 8,
-    marginTop: 16,
-    alignItems: "center",
-  },
-  saveButtonText: {
-    color: "white",
-    fontWeight: "bold",
-    fontSize: 16,
-  },
-  
   deckCheckItem: {
-    marginBottom: 8,
+    marginBottom: SPACING.SM,
   },
   checkboxContainer: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 8,
-  },
-  checkbox: {
-    width: 20,
-    height: 20,
-    borderRadius: 4,
-    borderWidth: 2,
-    borderColor: "#007AFF",
-    marginRight: 10,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "transparent",
-  },
-  checkboxSelected: {
-    backgroundColor: "#007AFF",
+    paddingVertical: SPACING.SM,
   },
   deckColorIndicator: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    marginRight: 8,
+    width: SPACING.MD,
+    height: SPACING.MD,
+    borderRadius: SPACING.SM,
+    marginRight: SPACING.SM,
   },
   deckCheckText: {
-    fontSize: 16,
-    color: "#333",
+    fontSize: FONT_SIZE.LG,
+    color: COLORS.DARK_GRAY,
     flex: 1,
   },
 });

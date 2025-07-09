@@ -10,16 +10,15 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { deleteFlashcard, saveFlashcard as saveFlashcardToStorage, saveFlashcardToDeck } from '../utils/storage';
+import { COLORS, SPACING } from '../constants/theme';
+import { commonStyles } from '../styles/common';
 
 interface FlashcardModalProps {
   visible: boolean;
   userMessage: string;
   response: string;
-  onSave: () => void;
+  onSave: (front: string, back: string) => void;
   onCancel: () => void;
-  editingCardId?: string; // Optional ID for editing existing cards
-  selectedDeckIds?: string[]; // Array of deck IDs to save to
 }
 
 export default function FlashcardModal({
@@ -28,8 +27,6 @@ export default function FlashcardModal({
   response,
   onSave,
   onCancel,
-  editingCardId,
-  selectedDeckIds = [],
 }: FlashcardModalProps) {
   const [editableUserMessage, setEditableUserMessage] = React.useState(userMessage);
   const [editableResponse, setEditableResponse] = React.useState(response);
@@ -39,50 +36,9 @@ export default function FlashcardModal({
     setEditableResponse(response);
   }, [userMessage, response]);
 
-  const handleSave = async () => {
-    try {
-      if (editingCardId) {
-        // Update existing flashcard by deleting old and creating new
-        await deleteFlashcard(editingCardId);
-        
-        if (selectedDeckIds.length > 0) {
-          // Save to each selected deck
-          for (const deckId of selectedDeckIds) {
-            await saveFlashcardToDeck(editableUserMessage, editableResponse, deckId);
-          }
-        } else {
-          // Fallback to legacy save if no decks selected
-          await saveFlashcardToStorage(editableUserMessage, editableResponse);
-        }
-        
-        console.log('Flashcard updated successfully:', { 
-          front: editableUserMessage, 
-          back: editableResponse,
-          decks: selectedDeckIds
-        });
-      } else {
-        // Create new flashcard
-        if (selectedDeckIds.length > 0) {
-          // Save to each selected deck
-          for (const deckId of selectedDeckIds) {
-            await saveFlashcardToDeck(editableUserMessage, editableResponse, deckId);
-          }
-        } else {
-          // Fallback to legacy save if no decks selected
-          await saveFlashcardToStorage(editableUserMessage, editableResponse);
-        }
-        
-        console.log('Flashcard saved successfully:', { 
-          front: editableUserMessage, 
-          back: editableResponse,
-          decks: selectedDeckIds
-        });
-      }
-      onSave(); // Notify parent that save was successful
-    } catch (error) {
-      console.error('Failed to save flashcard:', error);
-      // Could add error handling/toast here
-    }
+  const handleSave = () => {
+    // Pass the edited values back to the parent
+    onSave(editableUserMessage, editableResponse);
   };
 
   return (
@@ -93,28 +49,28 @@ export default function FlashcardModal({
       onRequestClose={onCancel}
     >
       <KeyboardAvoidingView 
-        style={styles.modalOverlay}
+        style={commonStyles.modalOverlay}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         keyboardVerticalOffset={Platform.OS === "ios" ? -50 : -30}
       >
-        <View style={styles.modalContent}>
-          <Text style={styles.modalTitle}>
-            {editingCardId ? 'Edit Flashcard' : 'Save as Flashcard'}
+        <View style={commonStyles.modalContent}>
+          <Text style={commonStyles.modalTitle}>
+            Edit Flashcard
           </Text>
           
           <ScrollView showsVerticalScrollIndicator={false}>
-            <Text style={styles.modalLabel}>Front:</Text>
+            <Text style={commonStyles.modalLabel}>Front:</Text>
             <TextInput
-              style={styles.modalInput}
+              style={[commonStyles.textInput, styles.modalInput]}
               value={editableUserMessage}
               onChangeText={setEditableUserMessage}
               multiline
               textAlignVertical="top"
             />
             
-            <Text style={styles.modalLabel}>Back:</Text>
+            <Text style={commonStyles.modalLabel}>Back:</Text>
             <TextInput
-              style={styles.modalInput}
+              style={[commonStyles.multilineInput, styles.modalInput]}
               value={editableResponse}
               onChangeText={setEditableResponse}
               multiline
@@ -122,16 +78,16 @@ export default function FlashcardModal({
             />
           </ScrollView>
           
-          <View style={styles.modalButtons}>
+          <View style={commonStyles.modalButtons}>
             <TouchableOpacity 
-              style={[styles.modalButton, styles.cancelButton]}
+              style={[commonStyles.modalButton, commonStyles.secondaryButton]}
               onPress={onCancel}
             >
-              <Text style={styles.cancelButtonText}>Cancel</Text>
+              <Text style={commonStyles.secondaryButtonText}>Cancel</Text>
             </TouchableOpacity>
             
             <TouchableOpacity 
-              style={[styles.modalButton, styles.saveFlashcardButton]}
+              style={[commonStyles.modalButton, styles.saveFlashcardButton]}
               onPress={handleSave}
             >
               <Text style={styles.saveFlashcardButtonText}>Save</Text>
@@ -144,67 +100,15 @@ export default function FlashcardModal({
 }
 
 const styles = StyleSheet.create({
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  modalContent: {
-    backgroundColor: "white",
-    borderRadius: 15,
-    padding: 20,
-    width: "90%",
-    maxHeight: "80%",
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 20,
-    textAlign: "center",
-    color: "#333",
-  },
-  
-  modalLabel: {
-    fontSize: 16,
-    fontWeight: "bold",
-    marginBottom: 8,
-    marginTop: 15,
-    color: "#333",
-  },
   modalInput: {
-    borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-    
-    backgroundColor: "#f9f9f9",
-  },
-  modalButtons: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 20,
-  },
-  modalButton: {
-    flex: 1,
-    padding: 12,
-    borderRadius: 8,
-    marginHorizontal: 5,
-  },
-  cancelButton: {
-    backgroundColor: "#6c757d",
-  },
-  cancelButtonText: {
-    color: "white",
-    textAlign: "center",
-    fontWeight: "bold",
+    marginHorizontal: SPACING.XS, // Add small horizontal margin
+    marginBottom: SPACING.SM, // Add bottom margin for spacing
   },
   saveFlashcardButton: {
-    backgroundColor: "#28a745",
+    backgroundColor: COLORS.SUCCESS,
   },
   saveFlashcardButtonText: {
-    color: "white",
+    color: COLORS.WHITE,
     textAlign: "center",
     fontWeight: "bold",
   },
