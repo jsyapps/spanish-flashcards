@@ -168,7 +168,7 @@ export default function Index() {
                     {decks.length > 0 && (
                       <>
                         <View style={{ marginTop: 20 }} />
-                        {decks.map((deck) => (
+                        {decks.filter(deck => deck.id !== 'all-deck').map((deck) => (
                           <TouchableOpacity
                             key={deck.id}
                             style={styles.deckCheckItem}

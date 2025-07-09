@@ -25,7 +25,11 @@ export interface Deck {
 const FLASHCARDS_KEY = 'flashcards';
 const DECKS_KEY = 'decks';
 const STORAGE_VERSION_KEY = 'storage_version';
-const CURRENT_STORAGE_VERSION = '2';
+const CURRENT_STORAGE_VERSION = '3';
+
+// Special deck constants
+const ALL_DECK_ID = 'all-deck';
+const ALL_DECK_NAME = 'All Flashcards';
 
 export const saveFlashcard = async (front: string, back: string): Promise<void> => {
   try {
@@ -108,19 +112,29 @@ export const saveDeck = async (name: string, description?: string, color?: strin
   }
 };
 
+const createAllDeck = async (): Promise<Deck> => {
+  return {
+    id: ALL_DECK_ID,
+    name: ALL_DECK_NAME,
+    description: 'Contains all your flashcards',
+    color: '#dc3545',
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
+};
+
 export const getDecks = async (): Promise<Deck[]> => {
   try {
     const decksJson = await AsyncStorage.getItem(DECKS_KEY);
-    if (decksJson) {
-      const decks = JSON.parse(decksJson);
-      // Convert date strings back to Date objects
-      return decks.map((deck: any) => ({
-        ...deck,
-        createdAt: new Date(deck.createdAt),
-        updatedAt: new Date(deck.updatedAt),
-      }));
-    }
-    return [];
+    const userDecks = decksJson ? JSON.parse(decksJson).map((deck: any) => ({
+      ...deck,
+      createdAt: new Date(deck.createdAt),
+      updatedAt: new Date(deck.updatedAt),
+    })) : [];
+    
+    // Always include the All deck at the beginning
+    const allDeck = await createAllDeck();
+    return [allDeck, ...userDecks];
   } catch (error) {
     console.error('Error getting decks:', error);
     return [];
@@ -129,8 +143,19 @@ export const getDecks = async (): Promise<Deck[]> => {
 
 export const updateDeck = async (id: string, updates: Partial<Omit<Deck, 'id' | 'createdAt'>>): Promise<void> => {
   try {
-    const existingDecks = await getDecks();
-    const deckIndex = existingDecks.findIndex(deck => deck.id === id);
+    // Prevent updating the All deck
+    if (id === ALL_DECK_ID) {
+      throw new Error('Cannot update the All deck');
+    }
+    
+    const decksJson = await AsyncStorage.getItem(DECKS_KEY);
+    const existingDecks: any[] = decksJson ? JSON.parse(decksJson).map((deck: any) => ({
+      ...deck,
+      createdAt: new Date(deck.createdAt),
+      updatedAt: new Date(deck.updatedAt),
+    })) : [];
+    
+    const deckIndex = existingDecks.findIndex((deck: any) => deck.id === id);
     
     if (deckIndex === -1) {
       throw new Error(`Deck with id ${id} not found`);
@@ -154,8 +179,14 @@ export const updateDeck = async (id: string, updates: Partial<Omit<Deck, 'id' | 
 
 export const deleteDeck = async (id: string): Promise<void> => {
   try {
-    const existingDecks = await getDecks();
-    const updatedDecks = existingDecks.filter(deck => deck.id !== id);
+    // Prevent deleting the All deck
+    if (id === ALL_DECK_ID) {
+      throw new Error('Cannot delete the All deck');
+    }
+    
+    const decksJson = await AsyncStorage.getItem(DECKS_KEY);
+    const existingDecks: any[] = decksJson ? JSON.parse(decksJson) : [];
+    const updatedDecks = existingDecks.filter((deck: any) => deck.id !== id);
     
     await AsyncStorage.setItem(DECKS_KEY, JSON.stringify(updatedDecks));
     
@@ -172,6 +203,10 @@ export const deleteDeck = async (id: string): Promise<void> => {
 
 export const getDeckById = async (id: string): Promise<Deck | null> => {
   try {
+    if (id === ALL_DECK_ID) {
+      return await createAllDeck();
+    }
+    
     const decks = await getDecks();
     return decks.find(deck => deck.id === id) || null;
   } catch (error) {
@@ -183,7 +218,27 @@ export const getDeckById = async (id: string): Promise<Deck | null> => {
 // Deck-aware Flashcard Operations
 export const saveFlashcardToDeck = async (front: string, back: string, deckId: string): Promise<FlashcardWithDeck> => {
   try {
-    // Verify deck exists
+    // Handle All deck - save without specific deck ID
+    if (deckId === ALL_DECK_ID) {
+      const flashcard: Flashcard = {
+        id: Date.now().toString(),
+        front,
+        back,
+        createdAt: new Date(),
+        // No deckId for All deck items
+      };
+
+      const existingFlashcards = await getFlashcards();
+      const updatedFlashcards = [...existingFlashcards, flashcard];
+      
+      await AsyncStorage.setItem(FLASHCARDS_KEY, JSON.stringify(updatedFlashcards));
+      return {
+        ...flashcard,
+        deckId: ALL_DECK_ID,
+      };
+    }
+    
+    // Verify deck exists for specific decks
     const deck = await getDeckById(deckId);
     if (!deck) {
       throw new Error(`Deck with id ${deckId} not found`);
@@ -211,6 +266,15 @@ export const saveFlashcardToDeck = async (front: string, back: string, deckId: s
 export const getFlashcardsByDeck = async (deckId: string): Promise<FlashcardWithDeck[]> => {
   try {
     const allFlashcards = await getFlashcards();
+    
+    // If requesting the All deck, return all flashcards
+    if (deckId === ALL_DECK_ID) {
+      return allFlashcards.map(card => ({
+        ...card,
+        deckId: card.deckId || ALL_DECK_ID, // Ensure deckId is set
+      })) as FlashcardWithDeck[];
+    }
+    
     return allFlashcards.filter(card => card.deckId === deckId) as FlashcardWithDeck[];
   } catch (error) {
     console.error('Error getting flashcards by deck:', error);
@@ -258,6 +322,14 @@ export const getFlashcardsWithoutDeck = async (): Promise<Flashcard[]> => {
 
 export const getDeckStats = async (deckId: string): Promise<{ cardCount: number; lastStudied?: Date }> => {
   try {
+    if (deckId === ALL_DECK_ID) {
+      const allFlashcards = await getFlashcards();
+      return {
+        cardCount: allFlashcards.length,
+        // TODO: Add lastStudied when study tracking is implemented
+      };
+    }
+    
     const flashcards = await getFlashcardsByDeck(deckId);
     return {
       cardCount: flashcards.length,
@@ -320,8 +392,8 @@ export const migrateToDecks = async (): Promise<void> => {
       await AsyncStorage.setItem('flashcards_backup', JSON.stringify(existingFlashcards));
     }
     
-    // Create default deck only if there are existing flashcards
-    if (existingFlashcards.length > 0) {
+    // Create default deck only if there are existing flashcards and we're migrating from version 1
+    if (existingFlashcards.length > 0 && currentVersion < '2') {
       const defaultDeck = await createDefaultDeck();
       
       // Migrate flashcards to default deck
@@ -333,6 +405,8 @@ export const migrateToDecks = async (): Promise<void> => {
       await AsyncStorage.setItem(FLASHCARDS_KEY, JSON.stringify(migratedFlashcards));
       console.log(`Migrated ${existingFlashcards.length} flashcards to default deck`);
     }
+    
+    // Version 3 migration: No special changes needed for All deck as it's virtual
     
     // Update storage version
     await setStorageVersion(CURRENT_STORAGE_VERSION);

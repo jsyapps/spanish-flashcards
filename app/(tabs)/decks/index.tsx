@@ -127,18 +127,22 @@ export default function DecksScreen() {
           <Text style={styles.deckName}>{item.name}</Text>
         </View>
         <View style={styles.deckActions}>
-          <TouchableOpacity 
-            style={styles.actionButton}
-            onPress={() => openEditModal(item)}
-          >
-            <Ionicons name="pencil" size={16} color="#007AFF" />
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={styles.actionButton}
-            onPress={() => handleDeleteDeck(item)}
-          >
-            <Ionicons name="trash" size={16} color="#dc3545" />
-          </TouchableOpacity>
+          {item.id !== 'all-deck' && (
+            <>
+              <TouchableOpacity 
+                style={styles.actionButton}
+                onPress={() => openEditModal(item)}
+              >
+                <Ionicons name="pencil" size={16} color="#007AFF" />
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={styles.actionButton}
+                onPress={() => handleDeleteDeck(item)}
+              >
+                <Ionicons name="trash" size={16} color="#dc3545" />
+              </TouchableOpacity>
+            </>
+          )}
         </View>
       </View>
       
