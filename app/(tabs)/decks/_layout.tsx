@@ -18,6 +18,14 @@ export default function DecksLayout() {
           headerLargeTitleShadowVisible: false,
         }}
       />
+      <Stack.Screen
+        name="flashcards"
+        options={({ route }) => ({
+          headerShown: true,
+          headerTitle: (route.params as any)?.title || "Flashcards",
+          headerBackTitle: "Back",
+        })}
+      />
     </Stack>
   );
 }

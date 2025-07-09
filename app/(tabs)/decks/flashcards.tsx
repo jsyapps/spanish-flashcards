@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
+import { useLocalSearchParams } from "expo-router";
 import React, { useState } from "react";
 import {
   Alert,
@@ -13,11 +14,11 @@ import {
   View
 } from "react-native";
 import FlashcardModal from "../../../components/FlashcardModal";
-import { 
-  clearAllFlashcards, 
-  deleteFlashcard, 
+import {
+  clearAllFlashcards,
   Deck,
-  Flashcard, 
+  deleteFlashcard,
+  Flashcard,
   getDecks,
   getFlashcards,
   getFlashcardsByDeck,
@@ -26,6 +27,7 @@ import {
 
 export default function FlashcardsScreen() {
   const navigation = useNavigation();
+  const { deckId } = useLocalSearchParams<{ deckId?: string }>();
   const [flashcards, setFlashcards] = useState<Flashcard[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -33,7 +35,7 @@ export default function FlashcardsScreen() {
   const [showAllBacks, setShowAllBacks] = useState(false);
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [decks, setDecks] = useState<Deck[]>([]);
-  const [selectedDeckId, setSelectedDeckId] = useState<string | null>(null); // null means "All"
+  const [selectedDeckId, setSelectedDeckId] = useState<string | null>(deckId || null); // Use deckId from params or null for "All"
   const [dropdownVisible, setDropdownVisible] = useState(false);
 
   const shuffleArray = (array: Flashcard[]) => {
@@ -78,6 +80,13 @@ export default function FlashcardsScreen() {
     }
   };
 
+  // Update selectedDeckId when deckId parameter changes
+  React.useEffect(() => {
+    if (deckId) {
+      setSelectedDeckId(deckId);
+    }
+  }, [deckId]);
+
   useFocusEffect(
     React.useCallback(() => {
       loadDecks();
@@ -92,20 +101,7 @@ export default function FlashcardsScreen() {
     }
   }, [selectedDeckId]);
 
-  // Set up header with deck selector
-  React.useLayoutEffect(() => {
-    navigation.setOptions({
-      headerRight: () => (
-        <TouchableOpacity
-          style={styles.headerDeckSelector}
-          onPress={() => setDropdownVisible(true)}
-        >
-          <Text style={styles.headerDeckSelectorText}>{getSelectedDeckName()}</Text>
-          <Ionicons name="chevron-down" size={16} color="#007AFF" />
-        </TouchableOpacity>
-      ),
-    });
-  }, [navigation, selectedDeckId, decks]);
+  // Title is now set via route params in the stack screen options
 
   const handleDeleteFlashcard = async (id: string) => {
     Alert.alert(
@@ -210,8 +206,9 @@ export default function FlashcardsScreen() {
 
   const getSelectedDeckName = () => {
     if (selectedDeckId === null) return "All Decks";
+    if (selectedDeckId === 'all-deck') return "All Flashcards";
     const deck = decks.find(d => d.id === selectedDeckId);
-    return deck ? deck.name : "All Decks";
+    return deck ? deck.name : "Flashcards";
   };
 
   const currentCard = flashcards[currentIndex];
@@ -241,12 +238,6 @@ export default function FlashcardsScreen() {
         </View>
       ) : (
         <View style={styles.cardContainer}>
-          <View style={styles.cardProgress}>
-            <Text style={styles.progressText}>
-              {currentIndex + 1} of {flashcards.length}
-            </Text>
-          </View>
-
           <View style={styles.cardWrapper}>
             <TouchableOpacity 
               style={[styles.flashcard, { 
@@ -275,6 +266,12 @@ export default function FlashcardsScreen() {
             </TouchableOpacity>
           </View>
 
+          <View style={styles.cardProgress}>
+            <Text style={styles.progressText}>
+              {currentIndex + 1} of {flashcards.length}
+            </Text>
+          </View>
+                
           <View style={styles.navigationButtons}>
             <TouchableOpacity
               style={[styles.navButton, currentIndex === 0 && styles.navButtonDisabled]}
@@ -492,7 +489,7 @@ const styles = StyleSheet.create({
   },
   cardProgress: {
     alignItems: "center",
-    marginBottom: 20,
+    marginTop: 30,
   },
   progressText: {
     fontSize: 16,
@@ -562,7 +559,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     gap: 16,
-    marginTop: 30,
+    marginTop: 20,
     paddingHorizontal: 20,
   },
   navButton: {
@@ -656,23 +653,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   dropdownItemTextSelected: {
-    color: "#007AFF",
-    fontWeight: "500",
-  },
-  headerDeckSelector: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    backgroundColor: "#f8f9fa",
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#007AFF",
-    gap: 6,
-    marginRight: 16,
-  },
-  headerDeckSelectorText: {
-    fontSize: 14,
     color: "#007AFF",
     fontWeight: "500",
   },

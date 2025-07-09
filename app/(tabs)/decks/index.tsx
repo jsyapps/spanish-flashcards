@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
+import { router } from "expo-router";
 import React, { useState } from "react";
 import {
   Alert,
@@ -119,8 +120,22 @@ export default function DecksScreen() {
     setEditingDeck(undefined);
   };
 
+  const handleDeckPress = (deck: DeckWithStats) => {
+    router.push({
+      pathname: '/decks/flashcards',
+      params: { 
+        deckId: deck.id,
+        title: deck.name
+      }
+    });
+  };
+
   const renderDeckItem = ({ item }: { item: DeckWithStats }) => (
-    <View style={styles.deckItem}>
+    <TouchableOpacity 
+      style={styles.deckItem}
+      onPress={() => handleDeckPress(item)}
+      activeOpacity={0.7}
+    >
       <View style={styles.deckHeader}>
         <View style={[styles.colorIndicator, { backgroundColor: item.color || "#007AFF" }]} />
         <View style={styles.deckInfo}>
@@ -131,13 +146,19 @@ export default function DecksScreen() {
             <>
               <TouchableOpacity 
                 style={styles.actionButton}
-                onPress={() => openEditModal(item)}
+                onPress={(e) => {
+                  e.stopPropagation();
+                  openEditModal(item);
+                }}
               >
                 <Ionicons name="pencil" size={16} color="#007AFF" />
               </TouchableOpacity>
               <TouchableOpacity 
                 style={styles.actionButton}
-                onPress={() => handleDeleteDeck(item)}
+                onPress={(e) => {
+                  e.stopPropagation();
+                  handleDeleteDeck(item);
+                }}
               >
                 <Ionicons name="trash" size={16} color="#dc3545" />
               </TouchableOpacity>
@@ -155,7 +176,7 @@ export default function DecksScreen() {
           Created {item.createdAt.toLocaleDateString()}
         </Text>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 
   if (loading) {

@@ -13,7 +13,7 @@ export default function ChatLayout() {
       <Stack.Screen
         name="index"
         options={{
-          title: "Spanish Chat",
+          title: "Ask Spanish",
           headerLargeTitle: false,
           headerLargeTitleShadowVisible: false,
         }}
