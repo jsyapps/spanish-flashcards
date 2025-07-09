@@ -9,6 +9,18 @@ export default function TabLayout() {
         headerShown: false, // We'll handle headers in individual stacks
       }}
     >
+         <Tabs.Screen
+        name="index"
+        options={{
+          title: "Ask",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="chatbubble" size={size} color={color} />
+          ),
+        }}
+      />
+
+
+
       <Tabs.Screen
         name="decks"
         options={{
@@ -19,15 +31,7 @@ export default function TabLayout() {
         }}
       />
 
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: "Ask",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="chatbubble" size={size} color={color} />
-          ),
-        }}
-      />
+     
       
       <Tabs.Screen
         name="flashcards"

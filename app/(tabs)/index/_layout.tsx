@@ -14,7 +14,7 @@ export default function ChatLayout() {
         name="index"
         options={{
           title: "Spanish Chat",
-          headerLargeTitle: true,
+          headerLargeTitle: false,
           headerLargeTitleShadowVisible: false,
         }}
       />

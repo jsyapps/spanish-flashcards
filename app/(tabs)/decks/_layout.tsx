@@ -14,7 +14,7 @@ export default function DecksLayout() {
         name="index"
         options={{
           title: "My Decks",
-          headerLargeTitle: true,
+          headerLargeTitle: false,
           headerLargeTitleShadowVisible: false,
         }}
       />
