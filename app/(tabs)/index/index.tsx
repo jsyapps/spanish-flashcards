@@ -17,7 +17,7 @@ import {
 import FlashcardModal from "../../../components/FlashcardModal";
 import { BORDER_RADIUS, COLORS, FONT_SIZE, SPACING } from "../../../constants/theme";
 import { commonStyles } from "../../../styles/common";
-import { Deck, getDecks, initializeStorage, saveFlashcardToDeck } from "../../../utils/storage";
+import { Deck, getDecks, initializeStorage, saveFlashcardToMultipleDecks } from "../../../utils/storage";
 
 export default function Index() {
   const [inputText, setInputText] = useState("");
@@ -69,7 +69,7 @@ export default function Index() {
       Keyboard.dismiss(); // Close the keyboard
       
       try {
-        const response = await fetch('/api/chat', {
+        const response = await fetch('https://spanish-flashcards-8l70416kc-jsyapps-projects.vercel.app/api/chat', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -89,7 +89,9 @@ export default function Index() {
         setEditableBack(data.response);
       } catch (error) {
         console.error('Error:', error);
-        const errorMessage = "Sorry, I couldn't get a response. Please try again.";
+        const errorMessage = error instanceof Error 
+          ? `Sorry, I couldn't get a response. Error: ${error.message}`
+          : "Sorry, I couldn't get a response. Please try again.";
         setResponse(errorMessage);
         setEditableFront(inputText.trim());
         setEditableBack(errorMessage);
@@ -101,10 +103,9 @@ export default function Index() {
   const handleSaveToDeck = async () => {
     if (editableFront.trim() && editableBack.trim() && selectedDecks.size > 0) {
       try {
-        // Save to each selected deck
-        for (const deckId of selectedDecks) {
-          await saveFlashcardToDeck(editableFront.trim(), editableBack.trim(), deckId);
-        }
+        // Save flashcard once to multiple decks
+        const selectedDeckIds = Array.from(selectedDecks);
+        await saveFlashcardToMultipleDecks(editableFront.trim(), editableBack.trim(), selectedDeckIds);
         
         // Get deck names for alert
         const selectedDeckNames = Array.from(selectedDecks).map(deckId => {
@@ -202,10 +203,6 @@ export default function Index() {
                                   <Ionicons name="checkmark" size={16} color={COLORS.WHITE} />
                                 )}
                               </View>
-                              <View style={[
-                                styles.deckColorIndicator,
-                                { backgroundColor: deck.color || COLORS.PRIMARY }
-                              ]} />
                               <Text style={styles.deckCheckText}>{deck.name}</Text>
                             </View>
                           </TouchableOpacity>
@@ -340,12 +337,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingVertical: SPACING.SM,
-  },
-  deckColorIndicator: {
-    width: SPACING.MD,
-    height: SPACING.MD,
-    borderRadius: SPACING.SM,
-    marginRight: SPACING.SM,
   },
   deckCheckText: {
     fontSize: FONT_SIZE.LG,

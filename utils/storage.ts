@@ -5,11 +5,16 @@ export interface Flashcard {
   front: string;
   back: string;
   createdAt: Date;
-  deckId?: string; // Optional for backward compatibility
 }
 
-export interface FlashcardWithDeck extends Flashcard {
-  deckId: string; // Required for deck-aware operations
+export interface FlashcardDeckAssociation {
+  flashcardId: string;
+  deckId: string;
+  addedAt: Date;
+}
+
+export interface FlashcardWithDecks extends Flashcard {
+  deckIds: string[];
 }
 
 export interface Deck {
@@ -24,8 +29,9 @@ export interface Deck {
 // Storage keys
 const FLASHCARDS_KEY = 'flashcards';
 const DECKS_KEY = 'decks';
+const FLASHCARD_DECK_ASSOCIATIONS_KEY = 'flashcard_deck_associations';
 const STORAGE_VERSION_KEY = 'storage_version';
-const CURRENT_STORAGE_VERSION = '3';
+const CURRENT_STORAGE_VERSION = '4';
 
 // Special deck constants
 const ALL_DECK_ID = 'all-deck';
@@ -90,18 +96,19 @@ export const clearAllFlashcards = async (): Promise<void> => {
 };
 
 // Deck CRUD Operations
-export const saveDeck = async (name: string, description?: string, color?: string): Promise<Deck> => {
+export const saveDeck = async (name: string, description?: string): Promise<Deck> => {
   try {
     const deck: Deck = {
       id: Date.now().toString(),
       name,
       description,
-      color,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
 
-    const existingDecks = await getDecks();
+    // Get only user-created decks (exclude the virtual "All flashcards" deck)
+    const decksJson = await AsyncStorage.getItem(DECKS_KEY);
+    const existingDecks = decksJson ? JSON.parse(decksJson) : [];
     const updatedDecks = [...existingDecks, deck];
     
     await AsyncStorage.setItem(DECKS_KEY, JSON.stringify(updatedDecks));
@@ -190,11 +197,11 @@ export const deleteDeck = async (id: string): Promise<void> => {
     
     await AsyncStorage.setItem(DECKS_KEY, JSON.stringify(updatedDecks));
     
-    // Also remove any flashcards associated with this deck
-    const existingFlashcards = await getFlashcards();
-    const updatedFlashcards = existingFlashcards.filter(card => card.deckId !== id);
+    // Remove all associations with this deck
+    const associations = await getFlashcardDeckAssociations();
+    const updatedAssociations = associations.filter(assoc => assoc.deckId !== id);
     
-    await AsyncStorage.setItem(FLASHCARDS_KEY, JSON.stringify(updatedFlashcards));
+    await AsyncStorage.setItem(FLASHCARD_DECK_ASSOCIATIONS_KEY, JSON.stringify(updatedAssociations));
   } catch (error) {
     console.error('Error deleting deck:', error);
     throw error;
@@ -215,47 +222,75 @@ export const getDeckById = async (id: string): Promise<Deck | null> => {
   }
 };
 
-// Deck-aware Flashcard Operations
-export const saveFlashcardToDeck = async (front: string, back: string, deckId: string): Promise<FlashcardWithDeck> => {
+// Flashcard-Deck Association Functions
+export const getFlashcardDeckAssociations = async (): Promise<FlashcardDeckAssociation[]> => {
   try {
-    // Handle All deck - save without specific deck ID
-    if (deckId === ALL_DECK_ID) {
-      const flashcard: Flashcard = {
-        id: Date.now().toString(),
-        front,
-        back,
-        createdAt: new Date(),
-        // No deckId for All deck items
-      };
-
-      const existingFlashcards = await getFlashcards();
-      const updatedFlashcards = [...existingFlashcards, flashcard];
-      
-      await AsyncStorage.setItem(FLASHCARDS_KEY, JSON.stringify(updatedFlashcards));
-      return {
-        ...flashcard,
-        deckId: ALL_DECK_ID,
-      };
+    const associationsJson = await AsyncStorage.getItem(FLASHCARD_DECK_ASSOCIATIONS_KEY);
+    if (associationsJson) {
+      const associations = JSON.parse(associationsJson);
+      return associations.map((assoc: any) => ({
+        ...assoc,
+        addedAt: new Date(assoc.addedAt),
+      }));
     }
+    return [];
+  } catch (error) {
+    console.error('Error getting flashcard deck associations:', error);
+    return [];
+  }
+};
+
+export const saveFlashcardDeckAssociation = async (flashcardId: string, deckId: string): Promise<void> => {
+  try {
+    const associations = await getFlashcardDeckAssociations();
+    const existingAssociation = associations.find(
+      assoc => assoc.flashcardId === flashcardId && assoc.deckId === deckId
+    );
     
-    // Verify deck exists for specific decks
-    const deck = await getDeckById(deckId);
-    if (!deck) {
-      throw new Error(`Deck with id ${deckId} not found`);
+    if (!existingAssociation) {
+      const newAssociation: FlashcardDeckAssociation = {
+        flashcardId,
+        deckId,
+        addedAt: new Date(),
+      };
+      
+      const updatedAssociations = [...associations, newAssociation];
+      await AsyncStorage.setItem(FLASHCARD_DECK_ASSOCIATIONS_KEY, JSON.stringify(updatedAssociations));
+    }
+  } catch (error) {
+    console.error('Error saving flashcard deck association:', error);
+    throw error;
+  }
+};
+
+// Updated Deck-aware Flashcard Operations
+export const saveFlashcardToDeck = async (front: string, back: string, deckId: string): Promise<Flashcard> => {
+  try {
+    // Verify deck exists (except for All deck which is virtual)
+    if (deckId !== ALL_DECK_ID) {
+      const deck = await getDeckById(deckId);
+      if (!deck) {
+        throw new Error(`Deck with id ${deckId} not found`);
+      }
     }
 
-    const flashcard: FlashcardWithDeck = {
-      id: Date.now().toString(),
+    const flashcard: Flashcard = {
+      id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
       front,
       back,
       createdAt: new Date(),
-      deckId,
     };
 
     const existingFlashcards = await getFlashcards();
     const updatedFlashcards = [...existingFlashcards, flashcard];
     
     await AsyncStorage.setItem(FLASHCARDS_KEY, JSON.stringify(updatedFlashcards));
+    
+    // Create deck association (except for All deck)
+    if (deckId !== ALL_DECK_ID) {
+      await saveFlashcardDeckAssociation(flashcard.id, deckId);
+    }
+    
     return flashcard;
   } catch (error) {
     console.error('Error saving flashcard to deck:', error);
@@ -263,49 +298,99 @@ export const saveFlashcardToDeck = async (front: string, back: string, deckId: s
   }
 };
 
-export const getFlashcardsByDeck = async (deckId: string): Promise<FlashcardWithDeck[]> => {
+export const saveFlashcardToMultipleDecks = async (front: string, back: string, deckIds: string[]): Promise<Flashcard> => {
+  try {
+    // Create the flashcard once
+    const flashcard: Flashcard = {
+      id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+      front,
+      back,
+      createdAt: new Date(),
+    };
+
+    const existingFlashcards = await getFlashcards();
+    const updatedFlashcards = [...existingFlashcards, flashcard];
+    
+    await AsyncStorage.setItem(FLASHCARDS_KEY, JSON.stringify(updatedFlashcards));
+    
+    // Create associations for all selected decks (except All deck)
+    for (const deckId of deckIds) {
+      if (deckId !== ALL_DECK_ID) {
+        const deck = await getDeckById(deckId);
+        if (deck) {
+          await saveFlashcardDeckAssociation(flashcard.id, deckId);
+        }
+      }
+    }
+    
+    return flashcard;
+  } catch (error) {
+    console.error('Error saving flashcard to multiple decks:', error);
+    throw error;
+  }
+};
+
+export const getFlashcardsByDeck = async (deckId: string): Promise<FlashcardWithDecks[]> => {
   try {
     const allFlashcards = await getFlashcards();
+    const associations = await getFlashcardDeckAssociations();
     
     // If requesting the All deck, return all flashcards
     if (deckId === ALL_DECK_ID) {
-      return allFlashcards.map(card => ({
-        ...card,
-        deckId: card.deckId || ALL_DECK_ID, // Ensure deckId is set
-      })) as FlashcardWithDeck[];
+      return allFlashcards.map(card => {
+        const cardAssociations = associations.filter(assoc => assoc.flashcardId === card.id);
+        return {
+          ...card,
+          deckIds: cardAssociations.map(assoc => assoc.deckId),
+        };
+      });
     }
     
-    return allFlashcards.filter(card => card.deckId === deckId) as FlashcardWithDeck[];
+    // Get flashcards associated with this specific deck
+    const deckAssociations = associations.filter(assoc => assoc.deckId === deckId);
+    const flashcardIds = deckAssociations.map(assoc => assoc.flashcardId);
+    
+    return allFlashcards
+      .filter(card => flashcardIds.includes(card.id))
+      .map(card => {
+        const cardAssociations = associations.filter(assoc => assoc.flashcardId === card.id);
+        return {
+          ...card,
+          deckIds: cardAssociations.map(assoc => assoc.deckId),
+        };
+      });
   } catch (error) {
     console.error('Error getting flashcards by deck:', error);
     return [];
   }
 };
 
-export const moveFlashcardToDeck = async (flashcardId: string, newDeckId: string): Promise<void> => {
+export const addFlashcardToDeck = async (flashcardId: string, deckId: string): Promise<void> => {
   try {
-    // Verify new deck exists
-    const deck = await getDeckById(newDeckId);
-    if (!deck) {
-      throw new Error(`Deck with id ${newDeckId} not found`);
+    if (deckId !== ALL_DECK_ID) {
+      const deck = await getDeckById(deckId);
+      if (!deck) {
+        throw new Error(`Deck with id ${deckId} not found`);
+      }
     }
 
-    const existingFlashcards = await getFlashcards();
-    const flashcardIndex = existingFlashcards.findIndex(card => card.id === flashcardId);
-    
-    if (flashcardIndex === -1) {
-      throw new Error(`Flashcard with id ${flashcardId} not found`);
-    }
-    
-    const updatedFlashcards = [...existingFlashcards];
-    updatedFlashcards[flashcardIndex] = {
-      ...updatedFlashcards[flashcardIndex],
-      deckId: newDeckId,
-    };
-    
-    await AsyncStorage.setItem(FLASHCARDS_KEY, JSON.stringify(updatedFlashcards));
+    await saveFlashcardDeckAssociation(flashcardId, deckId);
   } catch (error) {
-    console.error('Error moving flashcard to deck:', error);
+    console.error('Error adding flashcard to deck:', error);
+    throw error;
+  }
+};
+
+export const removeFlashcardFromDeck = async (flashcardId: string, deckId: string): Promise<void> => {
+  try {
+    const associations = await getFlashcardDeckAssociations();
+    const updatedAssociations = associations.filter(
+      assoc => !(assoc.flashcardId === flashcardId && assoc.deckId === deckId)
+    );
+    
+    await AsyncStorage.setItem(FLASHCARD_DECK_ASSOCIATIONS_KEY, JSON.stringify(updatedAssociations));
+  } catch (error) {
+    console.error('Error removing flashcard from deck:', error);
     throw error;
   }
 };
@@ -313,7 +398,10 @@ export const moveFlashcardToDeck = async (flashcardId: string, newDeckId: string
 export const getFlashcardsWithoutDeck = async (): Promise<Flashcard[]> => {
   try {
     const allFlashcards = await getFlashcards();
-    return allFlashcards.filter(card => !card.deckId);
+    const associations = await getFlashcardDeckAssociations();
+    
+    const flashcardIdsWithDecks = new Set(associations.map(assoc => assoc.flashcardId));
+    return allFlashcards.filter(card => !flashcardIdsWithDecks.has(card.id));
   } catch (error) {
     console.error('Error getting flashcards without deck:', error);
     return [];
@@ -365,8 +453,7 @@ export const createDefaultDeck = async (): Promise<Deck> => {
   try {
     const defaultDeck = await saveDeck(
       'My Flashcards',
-      undefined,
-      '#007AFF'
+      undefined
     );
     return defaultDeck;
   } catch (error) {
@@ -392,21 +479,55 @@ export const migrateToDecks = async (): Promise<void> => {
       await AsyncStorage.setItem('flashcards_backup', JSON.stringify(existingFlashcards));
     }
     
-    // Create default deck only if there are existing flashcards and we're migrating from version 1
-    if (existingFlashcards.length > 0 && currentVersion < '2') {
-      const defaultDeck = await createDefaultDeck();
+    // Migration from version 1, 2, or 3 to version 4 (new association model)
+    if (currentVersion < '4') {
+      console.log('Migrating to association-based model...');
       
-      // Migrate flashcards to default deck
-      const migratedFlashcards = existingFlashcards.map(card => ({
-        ...card,
-        deckId: defaultDeck.id,
-      }));
+      // Get flashcards that have deckId property (from old model)
+      const flashcardsWithDecks = existingFlashcards.filter((card: any) => card.deckId);
       
-      await AsyncStorage.setItem(FLASHCARDS_KEY, JSON.stringify(migratedFlashcards));
-      console.log(`Migrated ${existingFlashcards.length} flashcards to default deck`);
+      if (flashcardsWithDecks.length > 0) {
+        // Create associations for existing deck assignments
+        const associations: FlashcardDeckAssociation[] = flashcardsWithDecks.map((card: any) => ({
+          flashcardId: card.id,
+          deckId: card.deckId,
+          addedAt: card.createdAt || new Date(),
+        }));
+        
+        await AsyncStorage.setItem(FLASHCARD_DECK_ASSOCIATIONS_KEY, JSON.stringify(associations));
+        
+        // Remove deckId from flashcards (clean up old model)
+        const cleanedFlashcards = existingFlashcards.map((card: any) => {
+          const { deckId, ...cleanCard } = card;
+          return cleanCard;
+        });
+        
+        await AsyncStorage.setItem(FLASHCARDS_KEY, JSON.stringify(cleanedFlashcards));
+        console.log(`Migrated ${associations.length} deck associations`);
+      }
     }
     
-    // Version 3 migration: No special changes needed for All deck as it's virtual
+    // Create default deck only if there are existing flashcards without deck associations and we're migrating from version 1
+    if (existingFlashcards.length > 0 && currentVersion < '2') {
+      const flashcardsWithoutDecks = existingFlashcards.filter((card: any) => !card.deckId);
+      
+      if (flashcardsWithoutDecks.length > 0) {
+        const defaultDeck = await createDefaultDeck();
+        
+        // Create associations for flashcards without decks
+        const associations: FlashcardDeckAssociation[] = flashcardsWithoutDecks.map((card: any) => ({
+          flashcardId: card.id,
+          deckId: defaultDeck.id,
+          addedAt: card.createdAt || new Date(),
+        }));
+        
+        const existingAssociations = await getFlashcardDeckAssociations();
+        const allAssociations = [...existingAssociations, ...associations];
+        
+        await AsyncStorage.setItem(FLASHCARD_DECK_ASSOCIATIONS_KEY, JSON.stringify(allAssociations));
+        console.log(`Created default deck and migrated ${flashcardsWithoutDecks.length} flashcards`);
+      }
+    }
     
     // Update storage version
     await setStorageVersion(CURRENT_STORAGE_VERSION);
@@ -467,17 +588,6 @@ export const validateDeckDescription = (description?: string): { isValid: boolea
   return { isValid: true };
 };
 
-export const validateDeckColor = (color?: string): { isValid: boolean; error?: string } => {
-  if (color && typeof color !== 'string') {
-    return { isValid: false, error: 'Color must be a string' };
-  }
-  
-  if (color && !/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(color)) {
-    return { isValid: false, error: 'Color must be a valid hex color (e.g., #007AFF)' };
-  }
-  
-  return { isValid: true };
-};
 
 export const checkDeckNameExists = async (name: string, excludeId?: string): Promise<boolean> => {
   try {
@@ -494,8 +604,7 @@ export const checkDeckNameExists = async (name: string, excludeId?: string): Pro
 
 export const validateAndSaveDeck = async (
   name: string, 
-  description?: string, 
-  color?: string
+  description?: string
 ): Promise<{ success: boolean; deck?: Deck; error?: string }> => {
   try {
     // Validate name
@@ -510,11 +619,6 @@ export const validateAndSaveDeck = async (
       return { success: false, error: descriptionValidation.error };
     }
     
-    // Validate color
-    const colorValidation = validateDeckColor(color);
-    if (!colorValidation.isValid) {
-      return { success: false, error: colorValidation.error };
-    }
     
     // Check for duplicate name
     const nameExists = await checkDeckNameExists(name);
@@ -523,7 +627,7 @@ export const validateAndSaveDeck = async (
     }
     
     // Save deck
-    const deck = await saveDeck(name.trim(), description?.trim(), color);
+    const deck = await saveDeck(name.trim(), description?.trim());
     return { success: true, deck };
   } catch (error) {
     console.error('Error validating and saving deck:', error);
@@ -562,13 +666,6 @@ export const validateAndUpdateDeck = async (
       updates.description = updates.description?.trim();
     }
     
-    // Validate color if provided
-    if (updates.color !== undefined) {
-      const colorValidation = validateDeckColor(updates.color);
-      if (!colorValidation.isValid) {
-        return { success: false, error: colorValidation.error };
-      }
-    }
     
     // Update deck
     await updateDeck(id, updates);

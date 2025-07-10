@@ -137,7 +137,6 @@ export default function DecksScreen() {
       activeOpacity={0.7}
     >
       <View style={styles.deckHeader}>
-        <View style={[styles.colorIndicator, { backgroundColor: item.color || "#007AFF" }]} />
         <View style={styles.deckInfo}>
           <Text style={styles.deckName}>{item.name}</Text>
         </View>
@@ -172,9 +171,6 @@ export default function DecksScreen() {
           <Ionicons name="library" size={16} color="#666" />
           <Text style={styles.statText}>{item.cardCount} cards</Text>
         </View>
-        <Text style={styles.createdDate}>
-          Created {item.createdAt.toLocaleDateString()}
-        </Text>
       </View>
     </TouchableOpacity>
   );
@@ -285,12 +281,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 12,
-  },
-  colorIndicator: {
-    width: 4,
-    height: 40,
-    borderRadius: 2,
-    marginRight: 12,
   },
   deckInfo: {
     flex: 1,

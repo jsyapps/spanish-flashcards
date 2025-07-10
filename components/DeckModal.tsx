@@ -20,16 +20,6 @@ interface DeckModalProps {
   onCancel: () => void;
 }
 
-const PRESET_COLORS = [
-  '#007AFF', // Blue
-  '#34C759', // Green
-  '#FF9500', // Orange
-  '#FF3B30', // Red
-  '#AF52DE', // Purple
-  '#FF2D92', // Pink
-  '#5AC8FA', // Light Blue
-  '#FFCC00', // Yellow
-];
 
 export default function DeckModal({
   visible,
@@ -38,16 +28,13 @@ export default function DeckModal({
   onCancel,
 }: DeckModalProps) {
   const [name, setName] = useState(deck?.name || '');
-  const [selectedColor, setSelectedColor] = useState(deck?.color || PRESET_COLORS[0]);
   const [saving, setSaving] = useState(false);
 
   React.useEffect(() => {
     if (deck) {
       setName(deck.name);
-      setSelectedColor(deck.color || PRESET_COLORS[0]);
     } else {
       setName('');
-      setSelectedColor(PRESET_COLORS[0]);
     }
   }, [deck, visible]);
 
@@ -60,7 +47,6 @@ export default function DeckModal({
         // Edit mode
         const result = await validateAndUpdateDeck(deck.id, {
           name: name.trim(),
-          color: selectedColor,
         });
         
         if (!result.success) {
@@ -71,8 +57,7 @@ export default function DeckModal({
         // Create mode
         const result = await validateAndSaveDeck(
           name.trim(),
-          undefined,
-          selectedColor
+          undefined
         );
         
         if (!result.success) {
@@ -120,20 +105,6 @@ export default function DeckModal({
             />
             <Text style={styles.charCount}>{name.length}/50</Text>
             
-            <Text style={styles.label}>Color</Text>
-            <View style={styles.colorGrid}>
-              {PRESET_COLORS.map((color) => (
-                <TouchableOpacity
-                  key={color}
-                  style={[
-                    styles.colorOption,
-                    { backgroundColor: color },
-                    selectedColor === color && styles.selectedColor,
-                  ]}
-                  onPress={() => setSelectedColor(color)}
-                />
-              ))}
-            </View>
           </ScrollView>
           
           <View style={styles.modalButtons}>
@@ -209,23 +180,6 @@ const styles = StyleSheet.create({
     color: "#999",
     textAlign: "right",
     marginTop: 4,
-  },
-  colorGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 12,
-    marginTop: 8,
-  },
-  colorOption: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    borderWidth: 2,
-    borderColor: "transparent",
-  },
-  selectedColor: {
-    borderColor: "#333",
-    borderWidth: 3,
   },
   modalButtons: {
     flexDirection: "row",
