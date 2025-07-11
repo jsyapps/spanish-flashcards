@@ -26,6 +26,13 @@ export default function DecksLayout() {
           headerBackTitle: "Back",
         })}
       />
+      <Stack.Screen
+        name="manage-flashcards"
+        options={{
+          title: "Manage Cards",
+          headerBackTitle: "Back",
+        }}
+      />
     </Stack>
   );
 }

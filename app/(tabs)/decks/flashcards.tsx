@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useFocusEffect } from "@react-navigation/native";
-import { useLocalSearchParams } from "expo-router";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
+import { useLocalSearchParams, router } from "expo-router";
 import React, { useState } from "react";
 import {
   Alert,
@@ -26,6 +26,7 @@ import {
 } from "../../../utils/storage";
 
 export default function FlashcardsScreen() {
+  const navigation = useNavigation();
   const { deckId } = useLocalSearchParams<{ deckId?: string }>();
   const [flashcards, setFlashcards] = useState<Flashcard[]>([]);
   const [loading, setLoading] = useState(true);
@@ -42,7 +43,6 @@ export default function FlashcardsScreen() {
     }
     return shuffled;
   };
-
 
   const loadFlashcards = React.useCallback(async (shouldShuffle = true) => {
     try {
@@ -71,6 +71,31 @@ export default function FlashcardsScreen() {
       loadFlashcards(true);
     }, [loadFlashcards])
   );
+
+  // Set up header button
+  React.useLayoutEffect(() => {
+    if (flashcards.length > 0) {
+      navigation.setOptions({
+        headerRight: () => (
+          <TouchableOpacity 
+            
+            onPress={() => router.push({
+              pathname: '/decks/manage-flashcards',
+              params: { 
+                deckId: deckId || 'all-deck'
+              }
+            })}
+          >
+            <Ionicons name="list" size={24} color="#007AFF" />
+          </TouchableOpacity>
+        ),
+      });
+    } else {
+      navigation.setOptions({
+        headerRight: () => null,
+      });
+    }
+  }, [navigation, flashcards.length, deckId]);
 
   const handleDeleteFlashcard = async (id: string) => {
     Alert.alert(
@@ -175,7 +200,7 @@ export default function FlashcardsScreen() {
           <Ionicons name="library-outline" size={64} color={COLORS.EMPTY_ICON} />
           <Text style={commonStyles.emptyText}>No flashcards yet</Text>
           <Text style={commonStyles.emptySubtext}>
-            Start a conversation in the Chat tab to create flashcards!
+            Ask about Spanish to create flashcards!
           </Text>
         </View>
       ) : (
@@ -358,4 +383,5 @@ const styles = StyleSheet.create({
     marginTop: SPACING.XL,
     paddingHorizontal: SPACING.XL,
   },
+  
 });
