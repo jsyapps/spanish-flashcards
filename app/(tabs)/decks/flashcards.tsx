@@ -64,7 +64,7 @@ export default function FlashcardsScreen() {
     } finally {
       setLoading(false);
     }
-  }, [deckId, showAllBacks]);
+  }, [deckId]);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -146,7 +146,15 @@ export default function FlashcardsScreen() {
       }
       
       setEditModalVisible(false);
-      await loadFlashcards(false);
+      
+      // Update the current card in place instead of reloading all flashcards
+      const updatedFlashcards = [...flashcards];
+      updatedFlashcards[currentIndex] = {
+        ...updatedFlashcards[currentIndex],
+        front,
+        back
+      };
+      setFlashcards(updatedFlashcards);
     } catch (error) {
       console.error('Error updating flashcard:', error);
     }
