@@ -8,6 +8,7 @@ import {
   SafeAreaView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View
 } from "react-native";
@@ -32,6 +33,7 @@ export default function ManageFlashcardsScreen() {
   const [loading, setLoading] = useState(true);
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [editingCard, setEditingCard] = useState<Flashcard | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const loadFlashcards = React.useCallback(async () => {
     try {
@@ -57,6 +59,16 @@ export default function ManageFlashcardsScreen() {
       loadFlashcards();
     }, [loadFlashcards])
   );
+
+  // Filter flashcards based on search query
+  const filteredFlashcards = React.useMemo(() => {
+    if (!searchQuery.trim()) {
+      return flashcards;
+    }
+    return flashcards.filter(card =>
+      card.front.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [flashcards, searchQuery]);
 
 
 
@@ -136,7 +148,7 @@ export default function ManageFlashcardsScreen() {
           </TouchableOpacity>
         </View>
       </View>
-      {index < flashcards.length - 1 && <View style={styles.separator} />}
+      {index < filteredFlashcards.length - 1 && <View style={styles.separator} />}
     </>
   );
 
@@ -155,15 +167,51 @@ export default function ManageFlashcardsScreen() {
           </Text>
         </View>
       ) : (
-        <View style={styles.containerBox}>
-          <FlatList
-            data={flashcards}
-            renderItem={({ item, index }) => renderFlashcard({ item, index })}
-            keyExtractor={(item) => item.id}
-            contentContainerStyle={styles.listContainer}
-            showsVerticalScrollIndicator={false}
-          />
-        </View>
+        <>
+          {/* Search Bar */}
+          <View style={styles.searchContainer}>
+            <View style={styles.searchBar}>
+              <Ionicons name="search" size={20} color={COLORS.GRAY} style={styles.searchIcon} />
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Search flashcards..."
+                placeholderTextColor={COLORS.GRAY}
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                clearButtonMode="while-editing"
+              />
+              {searchQuery.length > 0 && (
+                <TouchableOpacity 
+                  style={styles.clearButton}
+                  onPress={() => setSearchQuery("")}
+                >
+                  <Ionicons name="close-circle" size={20} color={COLORS.GRAY} />
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+
+          {/* Flashcards List */}
+          {filteredFlashcards.length === 0 ? (
+            <View style={styles.noResultsContainer}>
+              <Ionicons name="search-outline" size={48} color={COLORS.EMPTY_ICON} />
+              <Text style={styles.noResultsText}>No matching flashcards</Text>
+              <Text style={styles.noResultsSubtext}>
+                Try a different search term
+              </Text>
+            </View>
+          ) : (
+            <View style={styles.containerBox}>
+              <FlatList
+                data={filteredFlashcards}
+                renderItem={({ item, index }) => renderFlashcard({ item, index })}
+                keyExtractor={(item) => item.id}
+                contentContainerStyle={styles.listContainer}
+                showsVerticalScrollIndicator={false}
+              />
+            </View>
+          )}
+        </>
       )}
 
       {editingCard && (
@@ -186,9 +234,38 @@ const styles = StyleSheet.create({
   container: {
     borderRadius: 20,
   },
+  searchContainer: {
+    paddingHorizontal: SPACING.LG,
+    paddingTop: SPACING.MD,
+    paddingBottom: SPACING.SM,
+  },
+  searchBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: COLORS.WHITE,
+    borderRadius: BORDER_RADIUS.LG,
+    paddingHorizontal: SPACING.MD,
+    paddingVertical: SPACING.SM,
+    borderWidth: 1,
+    borderColor: COLORS.BORDER,
+  },
+  searchIcon: {
+    marginRight: SPACING.SM,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: FONT_SIZE.MD,
+    color: COLORS.DARK_GRAY,
+    paddingVertical: SPACING.XS,
+  },
+  clearButton: {
+    marginLeft: SPACING.SM,
+    padding: SPACING.XS,
+  },
   containerBox: {
     backgroundColor: COLORS.WHITE,
     margin: SPACING.LG,
+    marginTop: 0,
     borderRadius: BORDER_RADIUS.XL,
     shadowColor: "#000",
     shadowOffset: {
@@ -224,11 +301,29 @@ const styles = StyleSheet.create({
   actionButton: {
     padding: SPACING.SM,
     borderRadius: BORDER_RADIUS.SM,
-    backgroundColor: COLORS.LIGHT_GRAY,
+    backgroundColor: "#f8f9fa",
   },
   separator: {
     height: 1,
     backgroundColor: COLORS.BORDER,
     marginHorizontal: SPACING.LG,
+  },
+  noResultsContainer: {
+    padding: SPACING.XXXL,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  noResultsText: {
+    fontSize: FONT_SIZE.LG,
+    fontWeight: "bold",
+    color: COLORS.GRAY,
+    marginTop: SPACING.MD,
+    textAlign: "center",
+  },
+  noResultsSubtext: {
+    fontSize: FONT_SIZE.MD,
+    color: COLORS.GRAY,
+    marginTop: SPACING.XS,
+    textAlign: "center",
   },
 });
