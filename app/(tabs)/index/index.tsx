@@ -73,6 +73,7 @@ export default function Index() {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'Authorization': 'Bearer spanish-flashcards-beta-2025-fbe169127c8a16226b1f7d23261646be',
           },
           body: JSON.stringify({
             message: inputText.trim(),
