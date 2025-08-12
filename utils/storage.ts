@@ -33,9 +33,6 @@ const FLASHCARD_DECK_ASSOCIATIONS_KEY = 'flashcard_deck_associations';
 const STORAGE_VERSION_KEY = 'storage_version';
 const CURRENT_STORAGE_VERSION = '4';
 
-// Special deck constants
-const ALL_DECK_ID = 'all-deck';
-const ALL_DECK_NAME = 'All Flashcards';
 
 export const saveFlashcard = async (front: string, back: string): Promise<void> => {
   try {
@@ -119,17 +116,6 @@ export const saveDeck = async (name: string, description?: string): Promise<Deck
   }
 };
 
-const createAllDeck = async (): Promise<Deck> => {
-  return {
-    id: ALL_DECK_ID,
-    name: ALL_DECK_NAME,
-    description: 'Contains all your flashcards',
-    color: '#dc3545',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  };
-};
-
 export const getDecks = async (): Promise<Deck[]> => {
   try {
     const decksJson = await AsyncStorage.getItem(DECKS_KEY);
@@ -139,9 +125,7 @@ export const getDecks = async (): Promise<Deck[]> => {
       updatedAt: new Date(deck.updatedAt),
     })) : [];
     
-    // Always include the All deck at the beginning
-    const allDeck = await createAllDeck();
-    return [allDeck, ...userDecks];
+    return userDecks;
   } catch (error) {
     console.error('Error getting decks:', error);
     return [];
@@ -150,10 +134,6 @@ export const getDecks = async (): Promise<Deck[]> => {
 
 export const updateDeck = async (id: string, updates: Partial<Omit<Deck, 'id' | 'createdAt'>>): Promise<void> => {
   try {
-    // Prevent updating the All deck
-    if (id === ALL_DECK_ID) {
-      throw new Error('Cannot update the All deck');
-    }
     
     const decksJson = await AsyncStorage.getItem(DECKS_KEY);
     const existingDecks: any[] = decksJson ? JSON.parse(decksJson).map((deck: any) => ({
@@ -186,10 +166,6 @@ export const updateDeck = async (id: string, updates: Partial<Omit<Deck, 'id' | 
 
 export const deleteDeck = async (id: string): Promise<void> => {
   try {
-    // Prevent deleting the All deck
-    if (id === ALL_DECK_ID) {
-      throw new Error('Cannot delete the All deck');
-    }
     
     const decksJson = await AsyncStorage.getItem(DECKS_KEY);
     const existingDecks: any[] = decksJson ? JSON.parse(decksJson) : [];
@@ -210,10 +186,6 @@ export const deleteDeck = async (id: string): Promise<void> => {
 
 export const getDeckById = async (id: string): Promise<Deck | null> => {
   try {
-    if (id === ALL_DECK_ID) {
-      return await createAllDeck();
-    }
-    
     const decks = await getDecks();
     return decks.find(deck => deck.id === id) || null;
   } catch (error) {
@@ -266,16 +238,14 @@ export const saveFlashcardDeckAssociation = async (flashcardId: string, deckId: 
 // Updated Deck-aware Flashcard Operations
 export const saveFlashcardToDeck = async (front: string, back: string, deckId: string): Promise<Flashcard> => {
   try {
-    // Verify deck exists (except for All deck which is virtual)
-    if (deckId !== ALL_DECK_ID) {
-      const deck = await getDeckById(deckId);
-      if (!deck) {
-        throw new Error(`Deck with id ${deckId} not found`);
-      }
+    // Verify deck exists
+    const deck = await getDeckById(deckId);
+    if (!deck) {
+      throw new Error(`Deck with id ${deckId} not found`);
     }
 
     const flashcard: Flashcard = {
-      id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+      id: Date.now().toString() + Math.random().toString(36).substring(2, 11),
       front,
       back,
       createdAt: new Date(),
@@ -286,10 +256,8 @@ export const saveFlashcardToDeck = async (front: string, back: string, deckId: s
     
     await AsyncStorage.setItem(FLASHCARDS_KEY, JSON.stringify(updatedFlashcards));
     
-    // Create deck association (except for All deck)
-    if (deckId !== ALL_DECK_ID) {
-      await saveFlashcardDeckAssociation(flashcard.id, deckId);
-    }
+    // Create deck association
+    await saveFlashcardDeckAssociation(flashcard.id, deckId);
     
     return flashcard;
   } catch (error) {
@@ -302,7 +270,7 @@ export const saveFlashcardToMultipleDecks = async (front: string, back: string, 
   try {
     // Create the flashcard once
     const flashcard: Flashcard = {
-      id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+      id: Date.now().toString() + Math.random().toString(36).substring(2, 11),
       front,
       back,
       createdAt: new Date(),
@@ -313,13 +281,11 @@ export const saveFlashcardToMultipleDecks = async (front: string, back: string, 
     
     await AsyncStorage.setItem(FLASHCARDS_KEY, JSON.stringify(updatedFlashcards));
     
-    // Create associations for all selected decks (except All deck)
+    // Create associations for all selected decks
     for (const deckId of deckIds) {
-      if (deckId !== ALL_DECK_ID) {
-        const deck = await getDeckById(deckId);
-        if (deck) {
-          await saveFlashcardDeckAssociation(flashcard.id, deckId);
-        }
+      const deck = await getDeckById(deckId);
+      if (deck) {
+        await saveFlashcardDeckAssociation(flashcard.id, deckId);
       }
     }
     
@@ -334,17 +300,6 @@ export const getFlashcardsByDeck = async (deckId: string): Promise<FlashcardWith
   try {
     const allFlashcards = await getFlashcards();
     const associations = await getFlashcardDeckAssociations();
-    
-    // If requesting the All deck, return all flashcards
-    if (deckId === ALL_DECK_ID) {
-      return allFlashcards.map(card => {
-        const cardAssociations = associations.filter(assoc => assoc.flashcardId === card.id);
-        return {
-          ...card,
-          deckIds: cardAssociations.map(assoc => assoc.deckId),
-        };
-      });
-    }
     
     // Get flashcards associated with this specific deck
     const deckAssociations = associations.filter(assoc => assoc.deckId === deckId);
@@ -367,11 +322,9 @@ export const getFlashcardsByDeck = async (deckId: string): Promise<FlashcardWith
 
 export const addFlashcardToDeck = async (flashcardId: string, deckId: string): Promise<void> => {
   try {
-    if (deckId !== ALL_DECK_ID) {
-      const deck = await getDeckById(deckId);
-      if (!deck) {
-        throw new Error(`Deck with id ${deckId} not found`);
-      }
+    const deck = await getDeckById(deckId);
+    if (!deck) {
+      throw new Error(`Deck with id ${deckId} not found`);
     }
 
     await saveFlashcardDeckAssociation(flashcardId, deckId);
@@ -410,14 +363,6 @@ export const getFlashcardsWithoutDeck = async (): Promise<Flashcard[]> => {
 
 export const getDeckStats = async (deckId: string): Promise<{ cardCount: number; lastStudied?: Date }> => {
   try {
-    if (deckId === ALL_DECK_ID) {
-      const allFlashcards = await getFlashcards();
-      return {
-        cardCount: allFlashcards.length,
-        // TODO: Add lastStudied when study tracking is implemented
-      };
-    }
-    
     const flashcards = await getFlashcardsByDeck(deckId);
     return {
       cardCount: flashcards.length,

@@ -12,6 +12,8 @@ import {
   View
 } from "react-native";
 import DeckModal from "../../../components/DeckModal";
+import { COLORS } from "../../../constants/theme";
+import { commonStyles } from "../../../styles/common";
 import { 
   deleteDeck, 
   Deck, 
@@ -141,28 +143,24 @@ export default function DecksScreen() {
           <Text style={styles.deckName}>{item.name}</Text>
         </View>
         <View style={styles.deckActions}>
-          {item.id !== 'all-deck' && (
-            <>
-              <TouchableOpacity 
-                style={styles.actionButton}
-                onPress={(e) => {
-                  e.stopPropagation();
-                  openEditModal(item);
-                }}
-              >
-                <Ionicons name="pencil" size={16} color="#007AFF" />
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={styles.actionButton}
-                onPress={(e) => {
-                  e.stopPropagation();
-                  handleDeleteDeck(item);
-                }}
-              >
-                <Ionicons name="trash" size={16} color="#dc3545" />
-              </TouchableOpacity>
-            </>
-          )}
+          <TouchableOpacity 
+            style={styles.actionButton}
+            onPress={(e) => {
+              e.stopPropagation();
+              openEditModal(item);
+            }}
+          >
+            <Ionicons name="pencil" size={16} color="#007AFF" />
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={styles.actionButton}
+            onPress={(e) => {
+              e.stopPropagation();
+              handleDeleteDeck(item);
+            }}
+          >
+            <Ionicons name="trash" size={16} color="#dc3545" />
+          </TouchableOpacity>
         </View>
       </View>
       
@@ -188,18 +186,12 @@ export default function DecksScreen() {
   return (
     <SafeAreaView style={styles.container}>
       {decks.length === 0 ? (
-        <View style={styles.centerContent}>
-          <Ionicons name="albums-outline" size={64} color="#ccc" />
-          <Text style={styles.emptyText}>No decks yet</Text>
-          <Text style={styles.emptySubtext}>
+        <View style={commonStyles.centerContent}>
+          <Ionicons name="list-outline" size={64} color={COLORS.EMPTY_ICON} />
+          <Text style={commonStyles.emptyText}>No decks yet</Text>
+          <Text style={commonStyles.emptySubtext}>
             Create your first deck to organize your flashcards!
           </Text>
-          <TouchableOpacity 
-            style={styles.createButton}
-            onPress={openCreateModal}
-          >
-            <Text style={styles.createButtonText}>Create Deck</Text>
-          </TouchableOpacity>
         </View>
       ) : (
         <FlatList

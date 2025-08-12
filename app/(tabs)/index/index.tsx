@@ -189,7 +189,7 @@ export default function Index() {
                     {decks.length > 0 && (
                       <>
                         <View style={{ marginTop: 20 }} />
-                        {decks.filter(deck => deck.id !== 'all-deck').map((deck) => (
+                        {decks.map((deck) => (
                           <TouchableOpacity
                             key={deck.id}
                             style={styles.deckCheckItem}
@@ -237,23 +237,32 @@ export default function Index() {
         </ScrollView>
         
         <View style={styles.inputContainer}>
-          <TextInput
-            style={[commonStyles.textInput, styles.mainInput]}
-            value={inputText}
-            onChangeText={setInputText}
-            onFocus={() => setIsMainInputFocused(true)}
-            onBlur={() => setIsMainInputFocused(false)}
-            placeholderTextColor={COLORS.GRAY}
-            multiline
-            maxLength={500}
-          />
-          <TouchableOpacity 
-            style={styles.sendButton}
-            onPress={sendMessage}
-            disabled={!inputText.trim()}
-          >
-            <Ionicons name="paper-plane" size={24} color={COLORS.WHITE} />
-          </TouchableOpacity>
+          <View style={styles.inputWrapper}>
+            <TextInput
+              style={[commonStyles.textInput, styles.mainInput]}
+              value={inputText}
+              onChangeText={setInputText}
+              onFocus={() => setIsMainInputFocused(true)}
+              onBlur={() => setIsMainInputFocused(false)}
+              placeholderTextColor={COLORS.GRAY}
+              multiline
+              maxLength={500}
+            />
+            <TouchableOpacity 
+              style={[
+                styles.sendButton,
+                !inputText.trim() && styles.sendButtonDisabled
+              ]}
+              onPress={sendMessage}
+              disabled={!inputText.trim()}
+            >
+              <Ionicons 
+                name="paper-plane" 
+                size={20} 
+                color={inputText.trim() ? COLORS.PRIMARY : COLORS.GRAY} 
+              />
+            </TouchableOpacity>
+          </View>
         </View>
 
         <FlashcardModal
@@ -308,28 +317,42 @@ const styles = StyleSheet.create({
     fontStyle: "italic",
   },
   inputContainer: {
-    flexDirection: "row",
+    position: "relative",
     padding: SPACING.LG,
-    backgroundColor: COLORS.WHITE,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.BORDER,
     alignItems: "flex-end",
-    paddingRight: SPACING.LG,
+  },
+  inputWrapper: {
+    position: "relative",
+    width: "100%",
+    borderRadius: BORDER_RADIUS.XXL,
+    backgroundColor: COLORS.WHITE,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 8,
   },
   mainInput: {
-    flex: 1,
     borderRadius: BORDER_RADIUS.XXL,
     paddingHorizontal: SPACING.LG,
-    paddingVertical: SPACING.SM,
-    marginRight: SPACING.SM,
+    paddingVertical: SPACING.MD,
+    paddingRight: 56, // Space for button (40px button + 16px padding)
     maxHeight: 100,
-    minWidth: 0, // Prevents text overflow
+    minWidth: 0,
+    backgroundColor: "transparent",
   },
   sendButton: {
-    backgroundColor: COLORS.PRIMARY,
-    paddingHorizontal: SPACING.SM,
-    paddingVertical: SPACING.SM,
-    borderRadius: BORDER_RADIUS.XXL,
+    position: "absolute",
+    right: 8,
+    top: 0,
+    bottom: 0,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: SPACING.SM,
+    opacity: 1,
+  },
+  sendButtonDisabled: {
+    opacity: 0.3,
   },
   deckCheckItem: {
     marginBottom: SPACING.SM,

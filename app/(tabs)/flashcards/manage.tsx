@@ -1,6 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
-import { useLocalSearchParams } from "expo-router";
 import React, { useState } from "react";
 import {
   Alert,
@@ -20,14 +19,11 @@ import {
   deleteFlashcard,
   Flashcard,
   getFlashcards,
-  getFlashcardsByDeck,
   initializeStorage,
-  saveFlashcard,
-  saveFlashcardToDeck
+  saveFlashcard
 } from "../../../utils/storage";
 
-export default function ManageFlashcardsScreen() {
-  const { deckId } = useLocalSearchParams<{ deckId?: string }>();
+export default function ManageAllFlashcardsScreen() {
   const [flashcards, setFlashcards] = useState<Flashcard[]>([]);
   const [loading, setLoading] = useState(true);
   const [editModalVisible, setEditModalVisible] = useState(false);
@@ -37,21 +33,14 @@ export default function ManageFlashcardsScreen() {
   const loadFlashcards = React.useCallback(async () => {
     try {
       await initializeStorage();
-      let cards: Flashcard[];
-      
-      if (!deckId) {
-        cards = await getFlashcards();
-      } else {
-        cards = await getFlashcardsByDeck(deckId);
-      }
-      
+      const cards = await getFlashcards();
       setFlashcards(cards);
     } catch (error) {
       console.error("Error loading flashcards:", error);
     } finally {
       setLoading(false);
     }
-  }, [deckId]);
+  }, []);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -65,11 +54,10 @@ export default function ManageFlashcardsScreen() {
       return flashcards;
     }
     return flashcards.filter(card =>
-      card.front.toLowerCase().includes(searchQuery.toLowerCase())
+      card.front.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      card.back.toLowerCase().includes(searchQuery.toLowerCase())
     );
   }, [flashcards, searchQuery]);
-
-
 
   const handleDeleteFlashcard = async (id: string) => {
     Alert.alert(
@@ -105,12 +93,7 @@ export default function ManageFlashcardsScreen() {
   const handleEditSave = async (front: string, back: string, cardId: string) => {
     try {
       await deleteFlashcard(cardId);
-      
-      if (deckId) {
-        await saveFlashcardToDeck(front, back, deckId);
-      } else {
-        await saveFlashcard(front, back);
-      }
+      await saveFlashcard(front, back);
       
       setEditModalVisible(false);
       setEditingCard(null);
@@ -162,7 +145,7 @@ export default function ManageFlashcardsScreen() {
           <Ionicons name="albums-outline" size={64} color={COLORS.EMPTY_ICON} />
           <Text style={commonStyles.emptyText}>No flashcards yet</Text>
           <Text style={commonStyles.emptySubtext}>
-            Start a conversation in the Chat tab to create flashcards!
+            Start a conversation in the Ask tab to create flashcards!
           </Text>
         </View>
       ) : (
@@ -205,7 +188,6 @@ export default function ManageFlashcardsScreen() {
                 data={filteredFlashcards}
                 renderItem={({ item, index }) => renderFlashcard({ item, index })}
                 keyExtractor={(item) => item.id}
-                
                 showsVerticalScrollIndicator={false}
               />
             </View>

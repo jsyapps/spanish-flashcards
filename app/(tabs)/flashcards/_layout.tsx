@@ -1,6 +1,6 @@
 import { Stack } from "expo-router";
 
-export default function DecksLayout() {
+export default function FlashcardsLayout() {
   return (
     <Stack
       screenOptions={{
@@ -13,24 +13,22 @@ export default function DecksLayout() {
       <Stack.Screen
         name="index"
         options={{
-          title: "My Decks",
+          title: "All Flashcards",
           headerLargeTitle: false,
           headerLargeTitleShadowVisible: false,
         }}
       />
       <Stack.Screen
-        name="flashcards"
-        options={({ route }) => ({
-          headerShown: true,
-          headerTitle: (route.params as any)?.title || "Flashcards",
+        name="view"
+        options={{
+          title: "Flashcard View",
           headerBackTitle: "Back",
-        })}
+        }}
       />
       <Stack.Screen
-        name="manage-flashcards"
+        name="manage"
         options={{
-          title: "Manage Cards",
-          headerShown: true,
+          title: "Manage All Cards",
           headerBackTitle: "Back",
         }}
       />

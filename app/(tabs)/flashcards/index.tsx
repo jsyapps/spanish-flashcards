@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
-import { useLocalSearchParams, router } from "expo-router";
+import { router } from "expo-router";
 import React, { useState } from "react";
 import {
   Alert,
@@ -19,15 +19,12 @@ import {
   deleteFlashcard,
   Flashcard,
   getFlashcards,
-  getFlashcardsByDeck,
   initializeStorage,
-  saveFlashcard,
-  saveFlashcardToDeck
+  saveFlashcard
 } from "../../../utils/storage";
 
-export default function FlashcardsScreen() {
+export default function AllFlashcardsScreen() {
   const navigation = useNavigation();
-  const { deckId } = useLocalSearchParams<{ deckId?: string }>();
   const [flashcards, setFlashcards] = useState<Flashcard[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -47,13 +44,7 @@ export default function FlashcardsScreen() {
   const loadFlashcards = React.useCallback(async (shouldShuffle = true) => {
     try {
       await initializeStorage();
-      let cards: Flashcard[];
-      
-      if (!deckId) {
-        cards = await getFlashcards();
-      } else {
-        cards = await getFlashcardsByDeck(deckId);
-      }
+      const cards = await getFlashcards();
       
       const finalCards = shouldShuffle ? shuffleArray(cards) : cards;
       setFlashcards(finalCards);
@@ -64,7 +55,7 @@ export default function FlashcardsScreen() {
     } finally {
       setLoading(false);
     }
-  }, [deckId, showAllBacks]);
+  }, [showAllBacks]);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -78,17 +69,7 @@ export default function FlashcardsScreen() {
       navigation.setOptions({
         headerRight: () => (
           <TouchableOpacity 
-            
-            onPress={() => {
-              if (deckId) {
-                router.push({
-                  pathname: '/decks/manage-flashcards',
-                  params: { deckId }
-                });
-              } else {
-                router.push('/decks/manage-flashcards');
-              }
-            }}
+            onPress={() => router.push('/flashcards/manage')}
           >
             <Ionicons name="list" size={24} color="#007AFF" />
           </TouchableOpacity>
@@ -99,7 +80,7 @@ export default function FlashcardsScreen() {
         headerRight: () => null,
       });
     }
-  }, [navigation, flashcards.length, deckId]);
+  }, [navigation, flashcards.length]);
 
   const handleDeleteFlashcard = async (id: string) => {
     Alert.alert(
@@ -135,7 +116,6 @@ export default function FlashcardsScreen() {
     );
   };
 
-
   const flipCard = () => {
     setShowBack(!showBack);
   };
@@ -159,7 +139,6 @@ export default function FlashcardsScreen() {
     }
   };
 
-
   const openEditModal = () => {
     setEditModalVisible(true);
   };
@@ -167,12 +146,7 @@ export default function FlashcardsScreen() {
   const handleEditSave = async (front: string, back: string, cardId: string) => {
     try {
       await deleteFlashcard(cardId);
-      
-      if (deckId) {
-        await saveFlashcardToDeck(front, back, deckId);
-      } else {
-        await saveFlashcard(front, back);
-      }
+      await saveFlashcard(front, back);
       
       setEditModalVisible(false);
       
@@ -189,7 +163,6 @@ export default function FlashcardsScreen() {
     }
   };
 
-
   const currentCard = flashcards[currentIndex];
   const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -201,7 +174,7 @@ export default function FlashcardsScreen() {
     <SafeAreaView style={commonStyles.container}>
       {flashcards.length === 0 ? (
         <View style={commonStyles.centerContent}>
-          <Ionicons name="library-outline" size={64} color={COLORS.EMPTY_ICON} />
+          <Ionicons name="albums-outline" size={64} color={COLORS.EMPTY_ICON} />
           <Text style={commonStyles.emptyText}>No flashcards yet</Text>
           <Text style={commonStyles.emptySubtext}>
             Ask about Spanish to create flashcards!
@@ -403,5 +376,4 @@ const styles = StyleSheet.create({
     marginTop: SPACING.XL,
     paddingHorizontal: SPACING.XL,
   },
-  
 });
