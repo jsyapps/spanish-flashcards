@@ -15,9 +15,9 @@ import {
   View
 } from "react-native";
 import FlashcardModal from "../../../components/FlashcardModal";
-import { BORDER_RADIUS, COLORS, FONT_SIZE, SPACING } from "../../../constants/theme";
+import { BORDER_RADIUS, COLORS, FONT_SIZE, FONT_WEIGHT, SPACING } from "../../../constants/theme";
 import { commonStyles } from "../../../styles/common";
-import { Deck, getDecks, initializeStorage, saveFlashcardToMultipleDecks } from "../../../utils/storage";
+import { Deck, getDecks, initializeStorage, saveFlashcard, saveFlashcardToMultipleDecks } from "../../../utils/storage";
 
 export default function Index() {
   const [inputText, setInputText] = useState("");
@@ -27,6 +27,7 @@ export default function Index() {
   const [editableBack, setEditableBack] = useState("");
   const [modalVisible, setModalVisible] = useState(false);
   const [isMainInputFocused, setIsMainInputFocused] = useState(false);
+  const [isFrontInputFocused, setIsFrontInputFocused] = useState(false);
   const [decks, setDecks] = useState<Deck[]>([]);
   const [selectedDecks, setSelectedDecks] = useState<Set<string>>(new Set());
 
@@ -35,15 +36,10 @@ export default function Index() {
       await initializeStorage();
       const deckList = await getDecks();
       setDecks(deckList);
-      
-      // Auto-select the first deck if available and none selected
-      if (deckList.length > 0 && selectedDecks.size === 0) {
-        setSelectedDecks(new Set([deckList[0].id]));
-      }
     } catch (error) {
       console.error("Error loading decks:", error);
     }
-  }, [selectedDecks.size]);
+  }, []);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -88,6 +84,7 @@ export default function Index() {
         setResponse(data.response);
         setEditableFront(inputText.trim());
         setEditableBack(data.response);
+        setSelectedDecks(new Set()); // Clear deck selection for new response
       } catch (error) {
         console.error('Error:', error);
         const errorMessage = error instanceof Error 
@@ -96,32 +93,43 @@ export default function Index() {
         setResponse(errorMessage);
         setEditableFront(inputText.trim());
         setEditableBack(errorMessage);
+        setSelectedDecks(new Set()); // Clear deck selection for error response
       }
     }
   };
 
 
   const handleSaveToDeck = async () => {
-    if (editableFront.trim() && editableBack.trim() && selectedDecks.size > 0) {
+    if (editableFront.trim() && editableBack.trim()) {
       try {
-        // Save flashcard once to multiple decks
-        const selectedDeckIds = Array.from(selectedDecks);
-        await saveFlashcardToMultipleDecks(editableFront.trim(), editableBack.trim(), selectedDeckIds);
+        let successMessage = "";
         
-        // Get deck names for alert
-        const selectedDeckNames = Array.from(selectedDecks).map(deckId => {
-          const deck = decks.find(d => d.id === deckId);
-          return deck ? deck.name : 'Unknown Deck';
-        });
-        
-        const deckText = selectedDeckNames.length === 1 
-          ? selectedDeckNames[0] 
-          : selectedDeckNames.join(', ');
+        if (selectedDecks.size === 0) {
+          // Save to general flashcard collection (no deck association)
+          await saveFlashcard(editableFront.trim(), editableBack.trim());
+          successMessage = "Flashcard saved!";
+        } else {
+          // Save to selected decks
+          const selectedDeckIds = Array.from(selectedDecks);
+          await saveFlashcardToMultipleDecks(editableFront.trim(), editableBack.trim(), selectedDeckIds);
+          
+          // Get deck names for alert
+          const selectedDeckNames = Array.from(selectedDecks).map(deckId => {
+            const deck = decks.find(d => d.id === deckId);
+            return deck ? deck.name : 'Unknown Deck';
+          });
+          
+          const deckText = selectedDeckNames.length === 1 
+            ? selectedDeckNames[0] 
+            : selectedDeckNames.join(', ');
+          
+          successMessage = `Flashcard saved to ${deckText}`;
+        }
         
         // Show success alert
         Alert.alert(
           "Card Saved!",
-          `Flashcard saved to ${deckText}`,
+          successMessage,
           [
             {
               text: "OK",
@@ -132,10 +140,7 @@ export default function Index() {
                 setEditableFront("");
                 setEditableBack("");
                 
-                // Reset to auto-select first deck for next flashcard
-                if (decks.length > 0) {
-                  setSelectedDecks(new Set([decks[0].id]));
-                }
+                // Keep current deck selection for next flashcard
               }
             }
           ]
@@ -168,18 +173,18 @@ export default function Index() {
               {response ? (
                 <>
                   <View style={commonStyles.card}>
-                    <Text style={[commonStyles.modalLabel, { marginTop: 0 }]}>Front:</Text>
                     <TextInput
-                      style={commonStyles.textInput}
+                      style={isFrontInputFocused ? styles.underlineInput : styles.frontTextNoUnderline}
                       value={editableFront}
                       onChangeText={setEditableFront}
+                      onFocus={() => setIsFrontInputFocused(true)}
+                      onBlur={() => setIsFrontInputFocused(false)}
                       multiline
                       textAlignVertical="top"
                     />
                     
-                    <Text style={commonStyles.modalLabel}>Back:</Text>
                     <TextInput
-                      style={commonStyles.multilineInput}
+                      style={[commonStyles.multilineInput, { marginTop: SPACING.LG }]}
                       value={editableBack}
                       onChangeText={setEditableBack}
                       multiline
@@ -208,14 +213,17 @@ export default function Index() {
                             </View>
                           </TouchableOpacity>
                         ))}
-                        <TouchableOpacity 
-                          style={[commonStyles.primaryButton, { marginTop: SPACING.XL }]}
-                          onPress={handleSaveToDeck}
-                        >
-                          <Text style={commonStyles.primaryButtonText}>Save to Deck</Text>
-                        </TouchableOpacity>
                       </>
                     )}
+                    
+                    <TouchableOpacity 
+                      style={[commonStyles.primaryButton, { marginTop: SPACING.XL }]}
+                      onPress={handleSaveToDeck}
+                    >
+                      <Text style={commonStyles.primaryButtonText}>
+                        {selectedDecks.size > 0 ? 'Save to Deck' : 'Save'}
+                      </Text>
+                    </TouchableOpacity>
                   </View>
                 </>
               ) : (
@@ -244,24 +252,13 @@ export default function Index() {
               onChangeText={setInputText}
               onFocus={() => setIsMainInputFocused(true)}
               onBlur={() => setIsMainInputFocused(false)}
+              onSubmitEditing={sendMessage}
               placeholderTextColor={COLORS.GRAY}
-              multiline
+              returnKeyType="send"
+              enablesReturnKeyAutomatically={true}
+              blurOnSubmit={false}
               maxLength={500}
             />
-            <TouchableOpacity 
-              style={[
-                styles.sendButton,
-                !inputText.trim() && styles.sendButtonDisabled
-              ]}
-              onPress={sendMessage}
-              disabled={!inputText.trim()}
-            >
-              <Ionicons 
-                name="paper-plane" 
-                size={20} 
-                color={inputText.trim() ? COLORS.PRIMARY : COLORS.GRAY} 
-              />
-            </TouchableOpacity>
           </View>
         </View>
 
@@ -327,32 +324,18 @@ const styles = StyleSheet.create({
     borderRadius: BORDER_RADIUS.XXL,
     backgroundColor: COLORS.WHITE,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 4,
   },
   mainInput: {
     borderRadius: BORDER_RADIUS.XXL,
     paddingHorizontal: SPACING.LG,
     paddingVertical: SPACING.MD,
-    paddingRight: 56, // Space for button (40px button + 16px padding)
     maxHeight: 100,
     minWidth: 0,
     backgroundColor: "transparent",
-  },
-  sendButton: {
-    position: "absolute",
-    right: 8,
-    top: 0,
-    bottom: 0,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: SPACING.SM,
-    opacity: 1,
-  },
-  sendButtonDisabled: {
-    opacity: 0.3,
   },
   deckCheckItem: {
     marginBottom: SPACING.SM,
@@ -366,5 +349,28 @@ const styles = StyleSheet.create({
     fontSize: FONT_SIZE.LG,
     color: COLORS.DARK_GRAY,
     flex: 1,
+  },
+  underlineInput: {
+    borderBottomWidth: 2,
+    borderBottomColor: COLORS.PRIMARY,
+    paddingHorizontal: 0,
+    paddingTop: 0,
+    paddingBottom: 2,
+    fontSize: FONT_SIZE.XXXL,
+    backgroundColor: 'transparent',
+    color: COLORS.GRAY_800,
+    fontWeight: FONT_WEIGHT.SEMIBOLD,
+    minHeight: 32,
+  },
+  frontTextNoUnderline: {
+    paddingHorizontal: 0,
+    paddingTop: 0,
+    paddingBottom: 2,
+    fontSize: FONT_SIZE.XXXL,
+    backgroundColor: 'transparent',
+    color: COLORS.GRAY_800,
+    fontWeight: FONT_WEIGHT.SEMIBOLD,
+    minHeight: 32,
+    borderBottomWidth: 0,
   },
 });

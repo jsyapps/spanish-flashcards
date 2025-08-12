@@ -14,12 +14,12 @@ import {
 import DeckModal from "../../../components/DeckModal";
 import { COLORS } from "../../../constants/theme";
 import { commonStyles } from "../../../styles/common";
-import { 
-  deleteDeck, 
-  Deck, 
-  getDeckStats, 
-  getDecks, 
-  initializeStorage 
+import {
+  Deck,
+  deleteDeck,
+  getDeckStats,
+  getDecks,
+  initializeStorage
 } from "../../../utils/storage";
 
 interface DeckWithStats extends Deck {
@@ -166,7 +166,7 @@ export default function DecksScreen() {
       
       <View style={styles.deckStats}>
         <View style={styles.statItem}>
-          <Ionicons name="library" size={16} color="#666" />
+          <Ionicons name="albums" size={16} color="#666" />
           <Text style={styles.statText}>{item.cardCount} cards</Text>
         </View>
       </View>
