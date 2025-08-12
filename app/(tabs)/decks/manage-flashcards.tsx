@@ -14,7 +14,7 @@ import {
 } from "react-native";
 import FlashcardModal from "../../../components/FlashcardModal";
 import { LoadingScreen } from "../../../components/LoadingScreen";
-import { BORDER_RADIUS, COLORS, FONT_SIZE, SPACING } from "../../../constants/theme";
+import { BORDER_RADIUS, COLORS, FONT_SIZE, FONT_WEIGHT, SPACING, SHADOW } from "../../../constants/theme";
 import { commonStyles } from "../../../styles/common";
 import {
   deleteFlashcard,
@@ -206,7 +206,7 @@ export default function ManageFlashcardsScreen() {
                 data={filteredFlashcards}
                 renderItem={({ item, index }) => renderFlashcard({ item, index })}
                 keyExtractor={(item) => item.id}
-                contentContainerStyle={styles.listContainer}
+                
                 showsVerticalScrollIndicator={false}
               />
             </View>
@@ -232,49 +232,53 @@ export default function ManageFlashcardsScreen() {
 
 const styles = StyleSheet.create({
   container: {
-    borderRadius: 20,
+    backgroundColor: COLORS.BACKGROUND,
   },
   searchContainer: {
     paddingHorizontal: SPACING.LG,
-    paddingTop: SPACING.MD,
-    paddingBottom: SPACING.SM,
+    paddingTop: SPACING.LG,
+    paddingBottom: SPACING.MD,
   },
   searchBar: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: COLORS.WHITE,
-    borderRadius: BORDER_RADIUS.LG,
-    paddingHorizontal: SPACING.MD,
-    paddingVertical: SPACING.SM,
-    borderWidth: 1,
-    borderColor: COLORS.BORDER,
+    borderRadius: BORDER_RADIUS.XL,
+    paddingHorizontal: SPACING.LG,
+    paddingVertical: SPACING.MD,
+    borderWidth: 2,
+    borderColor: COLORS.INPUT_BORDER,
+    ...SHADOW.SM,
+  },
+  searchBarFocused: {
+    borderColor: COLORS.PRIMARY,
+    ...SHADOW.MD,
   },
   searchIcon: {
-    marginRight: SPACING.SM,
+    marginRight: SPACING.MD,
   },
   searchInput: {
     flex: 1,
-    fontSize: FONT_SIZE.MD,
-    color: COLORS.DARK_GRAY,
+    fontSize: FONT_SIZE.LG,
+    color: COLORS.GRAY_800,
     paddingVertical: SPACING.XS,
+    fontWeight: FONT_WEIGHT.REGULAR,
   },
   clearButton: {
-    marginLeft: SPACING.SM,
-    padding: SPACING.XS,
+    marginLeft: SPACING.MD,
+    padding: SPACING.SM,
+    borderRadius: BORDER_RADIUS.SM,
   },
   containerBox: {
     backgroundColor: COLORS.WHITE,
-    margin: SPACING.LG,
+    marginHorizontal: SPACING.LG,
     marginTop: 0,
     borderRadius: BORDER_RADIUS.XL,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    maxHeight: '82%',
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: COLORS.CARD_BORDER,
+    ...SHADOW.LG,
   },
   listContainer: {
     backgroundColor: COLORS.WHITE,
@@ -283,47 +287,60 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: SPACING.LG,
-    paddingVertical: SPACING.MD,
+    paddingHorizontal: SPACING.XL,
+    paddingVertical: SPACING.LG,
+    backgroundColor: COLORS.WHITE,
+  },
+  flashcardItemHover: {
+    backgroundColor: COLORS.GRAY_50,
   },
   frontText: {
     fontSize: FONT_SIZE.LG,
-    fontWeight: "bold",
-    color: COLORS.DARK_GRAY,
+    fontWeight: FONT_WEIGHT.MEDIUM,
+    color: COLORS.GRAY_800,
     lineHeight: 24,
     flex: 1,
-    marginRight: SPACING.MD,
+    marginRight: SPACING.LG,
   },
   flashcardActions: {
     flexDirection: "row",
-    gap: SPACING.SM,
+    gap: SPACING.MD,
   },
   actionButton: {
-    padding: SPACING.SM,
-    borderRadius: BORDER_RADIUS.SM,
-    backgroundColor: "#f8f9fa",
+    padding: SPACING.MD,
+    borderRadius: BORDER_RADIUS.LG,
+    backgroundColor: COLORS.GRAY_100,
+    ...SHADOW.SM,
+  },
+  actionButtonPressed: {
+    backgroundColor: COLORS.GRAY_200,
+    transform: [{ scale: 0.95 }],
   },
   separator: {
     height: 1,
-    backgroundColor: COLORS.BORDER,
-    marginHorizontal: SPACING.LG,
+    backgroundColor: COLORS.GRAY_200,
+    marginHorizontal: SPACING.XL,
   },
   noResultsContainer: {
-    padding: SPACING.XXXL,
+    padding: SPACING.XXXXL,
     alignItems: "center",
     justifyContent: "center",
+    backgroundColor: COLORS.GRAY_50,
+    margin: SPACING.LG,
+    borderRadius: BORDER_RADIUS.XL,
   },
   noResultsText: {
-    fontSize: FONT_SIZE.LG,
-    fontWeight: "bold",
-    color: COLORS.GRAY,
-    marginTop: SPACING.MD,
+    fontSize: FONT_SIZE.XL,
+    fontWeight: FONT_WEIGHT.SEMIBOLD,
+    color: COLORS.GRAY_600,
+    marginTop: SPACING.LG,
     textAlign: "center",
   },
   noResultsSubtext: {
-    fontSize: FONT_SIZE.MD,
-    color: COLORS.GRAY,
-    marginTop: SPACING.XS,
+    fontSize: FONT_SIZE.LG,
+    fontWeight: FONT_WEIGHT.REGULAR,
+    color: COLORS.GRAY_500,
+    marginTop: SPACING.SM,
     textAlign: "center",
   },
 });

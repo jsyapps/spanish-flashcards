@@ -1,5 +1,5 @@
 import { StyleSheet } from 'react-native';
-import { COLORS, SPACING, BORDER_RADIUS, FONT_SIZE, SHADOW } from '../constants/theme';
+import { COLORS, SPACING, BORDER_RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOW } from '../constants/theme';
 
 export const commonStyles = StyleSheet.create({
   container: {
@@ -28,62 +28,125 @@ export const commonStyles = StyleSheet.create({
     marginTop: SPACING.SM,
     textAlign: 'center',
   },
-  // Button styles
+  // Enhanced Button styles
   primaryButton: {
     backgroundColor: COLORS.PRIMARY,
     paddingHorizontal: SPACING.XL,
-    paddingVertical: SPACING.MD,
-    borderRadius: BORDER_RADIUS.MD,
+    paddingVertical: SPACING.LG,
+    borderRadius: BORDER_RADIUS.LG,
     alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 48,
+    ...SHADOW.SM,
+  },
+  primaryButtonPressed: {
+    backgroundColor: COLORS.PRIMARY_DARK,
+    transform: [{ scale: 0.98 }],
   },
   primaryButtonText: {
     color: COLORS.WHITE,
-    fontWeight: 'bold',
+    fontWeight: FONT_WEIGHT.SEMIBOLD,
     fontSize: FONT_SIZE.LG,
+    letterSpacing: 0.5,
   },
+  
   secondaryButton: {
     backgroundColor: COLORS.SECONDARY,
     paddingHorizontal: SPACING.XL,
-    paddingVertical: SPACING.MD,
-    borderRadius: BORDER_RADIUS.MD,
+    paddingVertical: SPACING.LG,
+    borderRadius: BORDER_RADIUS.LG,
     alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 48,
+    ...SHADOW.SM,
+  },
+  secondaryButtonPressed: {
+    backgroundColor: COLORS.SECONDARY_DARK,
+    transform: [{ scale: 0.98 }],
   },
   secondaryButtonText: {
     color: COLORS.WHITE,
-    fontWeight: 'bold',
+    fontWeight: FONT_WEIGHT.SEMIBOLD,
     fontSize: FONT_SIZE.LG,
+    letterSpacing: 0.5,
   },
+  
   outlineButton: {
     backgroundColor: COLORS.WHITE,
     paddingVertical: SPACING.MD,
     paddingHorizontal: SPACING.LG,
-    borderRadius: BORDER_RADIUS.MD,
-    borderWidth: 1,
+    borderRadius: BORDER_RADIUS.LG,
+    borderWidth: 2,
     borderColor: COLORS.PRIMARY,
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 44,
+    ...SHADOW.SM,
+  },
+  outlineButtonPressed: {
+    backgroundColor: COLORS.PRIMARY_LIGHT,
+    transform: [{ scale: 0.98 }],
   },
   outlineButtonDisabled: {
     borderColor: COLORS.DISABLED,
     backgroundColor: COLORS.DISABLED_BACKGROUND,
   },
-  // Input styles
+  
+  // Ghost button for subtle actions
+  ghostButton: {
+    backgroundColor: 'transparent',
+    paddingVertical: SPACING.MD,
+    paddingHorizontal: SPACING.LG,
+    borderRadius: BORDER_RADIUS.LG,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 44,
+  },
+  ghostButtonPressed: {
+    backgroundColor: COLORS.GRAY_100,
+  },
+  ghostButtonText: {
+    color: COLORS.PRIMARY,
+    fontWeight: FONT_WEIGHT.MEDIUM,
+    fontSize: FONT_SIZE.LG,
+  },
+  // Enhanced Input styles
   textInput: {
-    borderWidth: 1,
-    borderColor: COLORS.BORDER,
-    borderRadius: BORDER_RADIUS.MD,
-    padding: SPACING.MD,
+    borderWidth: 2,
+    borderColor: COLORS.INPUT_BORDER,
+    borderRadius: BORDER_RADIUS.LG,
+    paddingHorizontal: SPACING.LG,
+    paddingVertical: SPACING.MD,
     fontSize: FONT_SIZE.LG,
     backgroundColor: COLORS.INPUT_BACKGROUND,
+    color: COLORS.GRAY_800,
+    fontWeight: FONT_WEIGHT.REGULAR,
+    minHeight: 48,
+    ...SHADOW.SM,
+  },
+  textInputFocus: {
+    borderColor: COLORS.INPUT_BORDER_FOCUS,
+    ...SHADOW.MD,
   },
   multilineInput: {
-    borderWidth: 1,
-    borderColor: COLORS.BORDER,
-    borderRadius: BORDER_RADIUS.MD,
-    padding: SPACING.MD,
+    borderWidth: 2,
+    borderColor: COLORS.INPUT_BORDER,
+    borderRadius: BORDER_RADIUS.LG,
+    paddingHorizontal: SPACING.LG,
+    paddingVertical: SPACING.MD,
     fontSize: FONT_SIZE.LG,
-    minHeight: 80,
+    minHeight: 120,
     backgroundColor: COLORS.INPUT_BACKGROUND,
+    color: COLORS.GRAY_800,
+    fontWeight: FONT_WEIGHT.REGULAR,
+    textAlignVertical: 'top',
+    ...SHADOW.SM,
+  },
+  multilineInputFocus: {
+    borderColor: COLORS.INPUT_BORDER_FOCUS,
+    ...SHADOW.MD,
   },
   // Modal styles
   modalOverlay: {
@@ -124,17 +187,23 @@ export const commonStyles = StyleSheet.create({
     borderRadius: BORDER_RADIUS.MD,
     marginHorizontal: 5,
   },
-  // Card styles
+  // Enhanced Card styles
   card: {
-    backgroundColor: COLORS.WHITE,
+    backgroundColor: COLORS.CARD_BACKGROUND,
     padding: SPACING.XL,
     borderRadius: BORDER_RADIUS.XL,
-    marginBottom: SPACING.SM,
-    shadowColor: SHADOW.color,
-    shadowOffset: SHADOW.offset,
-    shadowOpacity: SHADOW.opacity,
-    shadowRadius: SHADOW.radius,
-    elevation: SHADOW.elevation,
+    marginBottom: SPACING.MD,
+    borderWidth: 1,
+    borderColor: COLORS.CARD_BORDER,
+    ...SHADOW.MD,
+  },
+  cardHover: {
+    ...SHADOW.LG,
+    transform: [{ scale: 1.02 }],
+  },
+  cardPressed: {
+    ...SHADOW.SM,
+    transform: [{ scale: 0.98 }],
   },
   // Checkbox styles
   checkbox: {

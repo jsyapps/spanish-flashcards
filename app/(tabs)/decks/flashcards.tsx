@@ -12,7 +12,7 @@ import {
   View
 } from "react-native";
 import { LoadingScreen } from "../../../components/LoadingScreen";
-import { COLORS, SPACING, BORDER_RADIUS, FONT_SIZE, CARD_SHADOW } from "../../../constants/theme";
+import { COLORS, SPACING, BORDER_RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOW } from "../../../constants/theme";
 import { commonStyles } from "../../../styles/common";
 import FlashcardModal from "../../../components/FlashcardModal";
 import {
@@ -213,9 +213,6 @@ export default function FlashcardsScreen() {
               }]} 
               onPress={flipCard}
             >
-              <Text style={styles.cardLabel}>
-                {showBack ? "Back:" : "Front:"}
-              </Text>
               {showBack ? (
                 <View style={styles.backTextContainer}>
                   <Text style={styles.backText}>
@@ -223,13 +220,17 @@ export default function FlashcardsScreen() {
                   </Text>
                 </View>
               ) : (
-                <Text style={styles.frontText}>
-                  {currentCard.front}
-                </Text>
+                <View style={styles.frontTextContainer}>
+                  <Text style={styles.frontText}>
+                    {currentCard.front}
+                  </Text>
+                </View>
               )}
-              <Text style={styles.flipHint}>
-                {showBack ? "Tap to see front" : "Tap to see back"}
-              </Text>
+              <View style={styles.flipHintContainer}>
+                <Text style={styles.flipHint}>
+                  {showBack ? "Tap to see front" : "Tap to see back"}
+                </Text>
+              </View>
             </TouchableOpacity>
           </View>
 
@@ -323,57 +324,72 @@ const styles = StyleSheet.create({
   flashcard: {
     backgroundColor: COLORS.WHITE,
     borderRadius: BORDER_RADIUS.XXL,
-    padding: SPACING.XL,
+    padding: SPACING.XXXL,
     justifyContent: "space-between",
     alignItems: "center",
     borderWidth: 3,
     borderColor: COLORS.PRIMARY,
-    shadowColor: CARD_SHADOW.color,
-    shadowOffset: CARD_SHADOW.offset,
-    shadowOpacity: CARD_SHADOW.opacity,
-    shadowRadius: CARD_SHADOW.radius,
-    elevation: CARD_SHADOW.elevation,
+    ...SHADOW.XL,
     alignSelf: "center",
     overflow: "visible",
   },
+  flashcardPressed: {
+    ...SHADOW.LG,
+    transform: [{ scale: 0.98 }],
+    borderColor: COLORS.PRIMARY_DARK,
+  },
   cardLabel: {
-    fontSize: FONT_SIZE.LG,
-    fontWeight: "bold",
+    fontSize: FONT_SIZE.XL,
+    fontWeight: FONT_WEIGHT.BOLD,
     color: COLORS.PRIMARY,
     marginBottom: SPACING.XL,
+    letterSpacing: 0.5,
+  },
+  frontTextContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: SPACING.LG,
+    paddingVertical: SPACING.XL,
   },
   frontText: {
-    color: COLORS.DARK_GRAY,
+    color: COLORS.GRAY_800,
     textAlign: "center",
-    flex: 1,
-    textAlignVertical: "center",
-    paddingHorizontal: SPACING.SM,
-    paddingVertical: SPACING.XL,
-    fontWeight: "bold",
-    fontSize: FONT_SIZE.XXXL,
+    fontWeight: FONT_WEIGHT.BOLD,
+    fontSize: FONT_SIZE.XXXXL,
+    letterSpacing: 0.3,
+    lineHeight: 36,
   },
   backTextContainer: {
     flex: 1,
     justifyContent: "flex-start",
     alignItems: "stretch",
-    paddingHorizontal: SPACING.LG,
-    paddingVertical: SPACING.SM,
+    paddingHorizontal: SPACING.XL,
+    paddingVertical: SPACING.LG,
     overflow: "visible",
   },
   backText: {
-    color: COLORS.DARK_GRAY,
+    color: COLORS.GRAY_800,
     textAlign: "left",
-    fontWeight: "normal",
-    fontSize: FONT_SIZE.XL,
-    lineHeight: 22,
+    fontWeight: FONT_WEIGHT.REGULAR,
+    fontSize: FONT_SIZE.XXL,
+    lineHeight: 28,
     flexShrink: 1,
     flexWrap: "wrap",
   },
+  flipHintContainer: {
+    position: "absolute",
+    bottom: SPACING.XXL,
+    left: 0,
+    right: 0,
+    alignItems: "center",
+  },
   flipHint: {
-    fontSize: FONT_SIZE.MD,
-    color: COLORS.GRAY,
+    fontSize: FONT_SIZE.LG,
+    color: COLORS.GRAY_500,
     fontStyle: "italic",
-    marginBottom: SPACING.SM,
+    fontWeight: FONT_WEIGHT.MEDIUM,
+    letterSpacing: 0.2,
   },
   navigationButtons: {
     flexDirection: "row",
