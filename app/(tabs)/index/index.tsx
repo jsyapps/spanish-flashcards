@@ -3,6 +3,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import React, { useState } from "react";
 import {
   Alert,
+  FlatList,
   Keyboard,
   KeyboardAvoidingView,
   Platform,
@@ -15,9 +16,9 @@ import {
   View
 } from "react-native";
 import FlashcardModal from "../../../components/FlashcardModal";
-import { BORDER_RADIUS, COLORS, FONT_SIZE, FONT_WEIGHT, SPACING } from "../../../constants/theme";
+import { BORDER_RADIUS, COLORS, FONT_SIZE, FONT_WEIGHT, SHADOW, SPACING } from "../../../constants/theme";
 import { commonStyles } from "../../../styles/common";
-import { Deck, getDecks, initializeStorage, saveFlashcard, saveFlashcardToMultipleDecks } from "../../../utils/storage";
+import { Deck, Flashcard, getDecks, getFlashcards, initializeStorage, saveFlashcard, saveFlashcardToMultipleDecks } from "../../../utils/storage";
 
 export default function Index() {
   const [inputText, setInputText] = useState("");
@@ -30,6 +31,8 @@ export default function Index() {
   const [isFrontInputFocused, setIsFrontInputFocused] = useState(false);
   const [decks, setDecks] = useState<Deck[]>([]);
   const [selectedDecks, setSelectedDecks] = useState<Set<string>>(new Set());
+  const [recentFlashcards, setRecentFlashcards] = useState<Flashcard[]>([]);
+  const [showRecentOverlay, setShowRecentOverlay] = useState(false);
 
   const loadDecks = React.useCallback(async () => {
     try {
@@ -41,10 +44,24 @@ export default function Index() {
     }
   }, []);
 
+  const loadRecentFlashcards = React.useCallback(async () => {
+    try {
+      const allFlashcards = await getFlashcards();
+      // Sort by creation date (most recent first) and take first 15
+      const recent = allFlashcards
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        .slice(0, 15);
+      setRecentFlashcards(recent);
+    } catch (error) {
+      console.error("Error loading recent flashcards:", error);
+    }
+  }, []);
+
   useFocusEffect(
     React.useCallback(() => {
       loadDecks();
-    }, [loadDecks])
+      loadRecentFlashcards();
+    }, [loadDecks, loadRecentFlashcards])
   );
 
   const toggleDeckSelection = (deckId: string) => {
@@ -139,6 +156,9 @@ export default function Index() {
                 setResponse("");
                 setEditableFront("");
                 setEditableBack("");
+                
+                // Refresh recent flashcards to include the newly saved one
+                loadRecentFlashcards();
                 
                 // Keep current deck selection for next flashcard
               }
@@ -237,21 +257,62 @@ export default function Index() {
                 </>
               )}
             </>
-          ) : (
-            <View style={commonStyles.centerContent}>
-              <Text style={commonStyles.emptyText}>Type a word or phrase in Spanish.</Text>
-            </View>
-          )}
+          ) : null}
         </ScrollView>
+        
+        {/* Recent Flashcards Overlay */}
+        {showRecentOverlay && recentFlashcards.length > 0 && (
+          <View style={styles.recentOverlay}>
+            <Text style={styles.recentLabel}>Recent Flashcards</Text>
+            <View style={styles.containerBox}>
+              <FlatList
+                data={recentFlashcards}
+                keyExtractor={(item) => item.id}
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+                ItemSeparatorComponent={() => (
+                  <View style={styles.separator} />
+                )}
+                renderItem={({ item: flashcard }) => (
+                  <TouchableOpacity
+                    style={styles.flashcardItem}
+                    onPress={() => {
+                      setInputText(flashcard.front);
+                      // Auto-trigger search after setting text
+                      setTimeout(() => sendMessage(), 100);
+                    }}
+                  >
+                    <Text style={styles.flashcardFront} numberOfLines={1}>
+                      {flashcard.front}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+                contentContainerStyle={styles.listContainer}
+              />
+            </View>
+          </View>
+        )}
         
         <View style={styles.inputContainer}>
           <View style={styles.inputWrapper}>
+            <Ionicons 
+              name="search" 
+              size={20} 
+              color={COLORS.GRAY} 
+              style={styles.searchIcon}
+            />
             <TextInput
-              style={[commonStyles.textInput, styles.mainInput]}
+              style={[styles.mainInput]}
               value={inputText}
               onChangeText={setInputText}
-              onFocus={() => setIsMainInputFocused(true)}
-              onBlur={() => setIsMainInputFocused(false)}
+              onFocus={() => {
+                setIsMainInputFocused(true);
+                setShowRecentOverlay(true);
+              }}
+              onBlur={() => {
+                setIsMainInputFocused(false);
+                setShowRecentOverlay(false);
+              }}
               onSubmitEditing={sendMessage}
               placeholderTextColor={COLORS.GRAY}
               returnKeyType="send"
@@ -260,6 +321,18 @@ export default function Index() {
               maxLength={500}
             />
           </View>
+          {showRecentOverlay && (
+            <TouchableOpacity
+              style={styles.cancelButton}
+              onPress={() => {
+                Keyboard.dismiss();
+                setIsMainInputFocused(false);
+                setShowRecentOverlay(false);
+              }}
+            >
+              <Text style={styles.cancelButtonText}>Cancel</Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         <FlashcardModal
@@ -316,11 +389,15 @@ const styles = StyleSheet.create({
   inputContainer: {
     position: "relative",
     padding: SPACING.LG,
-    alignItems: "flex-end",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: SPACING.SM,
   },
   inputWrapper: {
     position: "relative",
-    width: "100%",
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
     borderRadius: BORDER_RADIUS.XXL,
     backgroundColor: COLORS.WHITE,
     shadowColor: "#000",
@@ -328,14 +405,29 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 6,
     elevation: 4,
+    paddingLeft: SPACING.LG,
   },
   mainInput: {
+    flex: 1,
     borderRadius: BORDER_RADIUS.XXL,
-    paddingHorizontal: SPACING.LG,
+    paddingLeft: SPACING.SM,
+    paddingRight: SPACING.LG,
     paddingVertical: SPACING.MD,
     maxHeight: 100,
     minWidth: 0,
     backgroundColor: "transparent",
+  },
+  searchIcon: {
+    marginRight: 0,
+  },
+  cancelButton: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  cancelButtonText: {
+    fontSize: FONT_SIZE.LG,
+    color: COLORS.PRIMARY,
+    fontWeight: FONT_WEIGHT.MEDIUM,
   },
   deckCheckItem: {
     marginBottom: SPACING.SM,
@@ -372,5 +464,49 @@ const styles = StyleSheet.create({
     fontWeight: FONT_WEIGHT.SEMIBOLD,
     minHeight: 32,
     borderBottomWidth: 0,
+  },
+  recentOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'flex-start',
+    paddingTop: SPACING.LG,
+    backgroundColor: COLORS.BACKGROUND,
+  },
+  recentLabel: {
+    fontSize: FONT_SIZE.LG,
+    fontWeight: FONT_WEIGHT.BOLD,
+    color: COLORS.DARK_GRAY,
+    marginHorizontal: SPACING.LG,
+    marginBottom: SPACING.SM,
+  },
+  containerBox: {
+    backgroundColor: COLORS.WHITE,
+    marginHorizontal: SPACING.LG,
+    borderRadius: BORDER_RADIUS.XL,
+    maxHeight: '90%',
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: COLORS.CARD_BORDER,
+    ...SHADOW.LG,
+  },
+  listContainer: {
+    backgroundColor: COLORS.WHITE,
+  },
+  flashcardItem: {
+    backgroundColor: COLORS.WHITE,
+    paddingHorizontal: SPACING.LG,
+    paddingVertical: SPACING.LG,
+  },
+  separator: {
+    height: 1,
+    backgroundColor: COLORS.LIGHT_GRAY,
+  },
+  flashcardFront: {
+    fontSize: FONT_SIZE.LG,
+    fontWeight: FONT_WEIGHT.SEMIBOLD,
+    color: COLORS.DARK_GRAY,
   },
 });

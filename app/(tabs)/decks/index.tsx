@@ -12,7 +12,7 @@ import {
   View
 } from "react-native";
 import DeckModal from "../../../components/DeckModal";
-import { COLORS } from "../../../constants/theme";
+import { BORDER_RADIUS, COLORS, SHADOW, SPACING } from "../../../constants/theme";
 import { commonStyles } from "../../../styles/common";
 import {
   Deck,
@@ -306,15 +306,10 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   actionButton: {
-    padding: 12,
-    borderRadius: 10,
-    backgroundColor: "#F7FAFC",
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
+    padding: SPACING.MD,
+    borderRadius: BORDER_RADIUS.LG,
+    backgroundColor: COLORS.GRAY_100,
+    ...SHADOW.SM,
     elevation: 1,
   },
   actionButtonPressed: {
