@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
-import { useLocalSearchParams, router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import React, { useState } from "react";
 import {
   Alert,
@@ -11,10 +11,10 @@ import {
   TouchableOpacity,
   View
 } from "react-native";
-import { LoadingScreen } from "../../../components/LoadingScreen";
-import { COLORS, SPACING, BORDER_RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOW } from "../../../constants/theme";
-import { commonStyles } from "../../../styles/common";
 import FlashcardModal from "../../../components/FlashcardModal";
+import { LoadingScreen } from "../../../components/LoadingScreen";
+import { BORDER_RADIUS, COLORS, FONT_SIZE, FONT_WEIGHT, SHADOW, SPACING } from "../../../constants/theme";
+import { commonStyles } from "../../../styles/common";
 import {
   deleteFlashcard,
   Flashcard,
@@ -201,7 +201,7 @@ export default function FlashcardsScreen() {
     <SafeAreaView style={commonStyles.container}>
       {flashcards.length === 0 ? (
         <View style={commonStyles.centerContent}>
-          <Ionicons name="library-outline" size={64} color={COLORS.EMPTY_ICON} />
+          <Ionicons name="albums-outline" size={64} color={COLORS.EMPTY_ICON} />
           <Text style={commonStyles.emptyText}>No flashcards yet</Text>
           <Text style={commonStyles.emptySubtext}>
             Ask about Spanish to create flashcards!

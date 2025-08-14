@@ -140,73 +140,74 @@ export default function ManageAllFlashcardsScreen() {
 
   return (
     <SafeAreaView style={[commonStyles.container, styles.container]}>
-      {flashcards.length === 0 ? (
-        <View style={commonStyles.centerContent}>
-          <Ionicons name="albums-outline" size={64} color={COLORS.EMPTY_ICON} />
-          <Text style={commonStyles.emptyText}>No flashcards yet</Text>
-          <Text style={commonStyles.emptySubtext}>
-            Start a conversation in the Ask tab to create flashcards!
-          </Text>
-        </View>
-      ) : (
-        <>
-          {/* Search Bar */}
-          <View style={styles.searchContainer}>
-            <View style={styles.searchBar}>
-              <Ionicons name="search" size={20} color={COLORS.GRAY} style={styles.searchIcon} />
-              <TextInput
-                style={styles.searchInput}
-                placeholder="Search flashcards..."
-                placeholderTextColor={COLORS.GRAY}
-                value={searchQuery}
-                onChangeText={setSearchQuery}
-                clearButtonMode="while-editing"
-              />
-              {searchQuery.length > 0 && (
-                <TouchableOpacity 
-                  style={styles.clearButton}
-                  onPress={() => setSearchQuery("")}
-                >
-                  <Ionicons name="close-circle" size={20} color={COLORS.GRAY} />
-                </TouchableOpacity>
-              )}
-            </View>
+        {flashcards.length === 0 ? (
+          <View style={commonStyles.centerContent}>
+            <Ionicons name="albums-outline" size={64} color={COLORS.EMPTY_ICON} />
+            <Text style={commonStyles.emptyText}>No flashcards yet</Text>
+            <Text style={commonStyles.emptySubtext}>
+              Start a conversation in the Ask tab to create flashcards!
+            </Text>
           </View>
-
-          {/* Flashcards List */}
-          {filteredFlashcards.length === 0 ? (
-            <View style={styles.noResultsContainer}>
-              <Ionicons name="search-outline" size={48} color={COLORS.EMPTY_ICON} />
-              <Text style={styles.noResultsText}>No matching flashcards</Text>
-              <Text style={styles.noResultsSubtext}>
-                Try a different search term
-              </Text>
+        ) : (
+          <>
+            {/* Search Bar */}
+            <View style={styles.searchContainer}>
+              <View style={styles.searchBar}>
+                <Ionicons name="search" size={20} color={COLORS.GRAY} style={styles.searchIcon} />
+                <TextInput
+                  style={styles.searchInput}
+                  placeholder="Search flashcards..."
+                  placeholderTextColor={COLORS.GRAY}
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
+                  clearButtonMode="while-editing"
+                />
+                {searchQuery.length > 0 && (
+                  <TouchableOpacity 
+                    style={styles.clearButton}
+                    onPress={() => setSearchQuery("")}
+                  >
+                    <Ionicons name="close-circle" size={20} color={COLORS.GRAY} />
+                  </TouchableOpacity>
+                )}
+              </View>
             </View>
-          ) : (
-            <View style={styles.containerBox}>
-              <FlatList
-                data={filteredFlashcards}
-                renderItem={({ item, index }) => renderFlashcard({ item, index })}
-                keyExtractor={(item) => item.id}
-                showsVerticalScrollIndicator={false}
-              />
-            </View>
-          )}
-        </>
-      )}
 
-      {editingCard && (
-        <FlashcardModal
-          visible={editModalVisible}
-          userMessage={editingCard.front}
-          response={editingCard.back}
-          onSave={(front, back) => handleEditSave(front, back, editingCard.id)}
-          onCancel={() => {
-            setEditModalVisible(false);
-            setEditingCard(null);
-          }}
-        />
-      )}
+            {/* Flashcards List */}
+            {filteredFlashcards.length === 0 ? (
+              <View style={styles.noResultsContainer}>
+                <Ionicons name="search-outline" size={48} color={COLORS.EMPTY_ICON} />
+                <Text style={styles.noResultsText}>No matching flashcards</Text>
+                <Text style={styles.noResultsSubtext}>
+                  Try a different search term
+                </Text>
+              </View>
+            ) : (
+              <View style={styles.containerBox}>
+                <FlatList
+                  data={filteredFlashcards}
+                  renderItem={({ item, index }) => renderFlashcard({ item, index })}
+                  keyExtractor={(item) => item.id}
+                  showsVerticalScrollIndicator={false}
+                  keyboardShouldPersistTaps="handled"
+                />
+              </View>
+            )}
+          </>
+        )}
+
+        {editingCard && (
+          <FlashcardModal
+            visible={editModalVisible}
+            userMessage={editingCard.front}
+            response={editingCard.back}
+            onSave={(front, back) => handleEditSave(front, back, editingCard.id)}
+            onCancel={() => {
+              setEditModalVisible(false);
+              setEditingCard(null);
+            }}
+          />
+        )}
     </SafeAreaView>
   );
 }
@@ -218,32 +219,35 @@ const styles = StyleSheet.create({
   searchContainer: {
     paddingHorizontal: SPACING.LG,
     paddingTop: SPACING.LG,
-    paddingBottom: SPACING.MD,
   },
   searchBar: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: COLORS.WHITE,
-    borderRadius: BORDER_RADIUS.XL,
-    paddingHorizontal: SPACING.LG,
-    paddingVertical: SPACING.MD,
-    borderWidth: 2,
-    borderColor: COLORS.INPUT_BORDER,
-    ...SHADOW.SM,
+    borderRadius: BORDER_RADIUS.XXL,
+    paddingLeft: SPACING.LG,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 4,
   },
   searchBarFocused: {
     borderColor: COLORS.PRIMARY,
     ...SHADOW.MD,
   },
   searchIcon: {
-    marginRight: SPACING.MD,
+    marginRight: 0,
   },
   searchInput: {
     flex: 1,
     fontSize: FONT_SIZE.LG,
     color: COLORS.GRAY_800,
-    paddingVertical: SPACING.XS,
+    paddingLeft: SPACING.SM,
+    paddingRight: SPACING.LG,
+    paddingVertical: SPACING.MD,
     fontWeight: FONT_WEIGHT.REGULAR,
+    backgroundColor: "transparent",
   },
   clearButton: {
     marginLeft: SPACING.MD,
@@ -251,11 +255,12 @@ const styles = StyleSheet.create({
     borderRadius: BORDER_RADIUS.SM,
   },
   containerBox: {
+    maxHeight: '75%',
     backgroundColor: COLORS.WHITE,
     marginHorizontal: SPACING.LG,
-    marginTop: 0,
+    marginTop: SPACING.LG,
+    marginBottom: SPACING.SM,
     borderRadius: BORDER_RADIUS.XL,
-    maxHeight: '82%',
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: COLORS.CARD_BORDER,

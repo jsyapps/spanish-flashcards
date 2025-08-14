@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import {
   Alert,
   FlatList,
+  Image,
   Keyboard,
   KeyboardAvoidingView,
   Platform,
@@ -47,10 +48,10 @@ export default function Index() {
   const loadRecentFlashcards = React.useCallback(async () => {
     try {
       const allFlashcards = await getFlashcards();
-      // Sort by creation date (most recent first) and take first 15
+      // Sort by creation date (most recent first) and take first 10
       const recent = allFlashcards
         .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-        .slice(0, 15);
+        .slice(0, 10);
       setRecentFlashcards(recent);
     } catch (error) {
       console.error("Error loading recent flashcards:", error);
@@ -257,39 +258,52 @@ export default function Index() {
                 </>
               )}
             </>
-          ) : null}
+          ) : (
+            <View style={styles.welcomeContainer}>
+              <Image 
+                source={require('../../../assets/images/icon-removebg-preview.png')} 
+                style={styles.welcomeIcon}
+                resizeMode="contain"
+              />
+              <Text style={styles.welcomeText}>
+                1. Ask me to translate something{'\n\n'}2. Make it into a flashcard
+              </Text>
+            </View>
+          )}
         </ScrollView>
         
         {/* Recent Flashcards Overlay */}
-        {showRecentOverlay && recentFlashcards.length > 0 && (
+        {showRecentOverlay && (
           <View style={styles.recentOverlay}>
             <Text style={styles.recentLabel}>Recent Flashcards</Text>
-            <View style={styles.containerBox}>
-              <FlatList
-                data={recentFlashcards}
-                keyExtractor={(item) => item.id}
-                showsVerticalScrollIndicator={false}
-                keyboardShouldPersistTaps="handled"
-                ItemSeparatorComponent={() => (
-                  <View style={styles.separator} />
-                )}
-                renderItem={({ item: flashcard }) => (
-                  <TouchableOpacity
-                    style={styles.flashcardItem}
-                    onPress={() => {
-                      setInputText(flashcard.front);
-                      // Auto-trigger search after setting text
-                      setTimeout(() => sendMessage(), 100);
-                    }}
-                  >
-                    <Text style={styles.flashcardFront} numberOfLines={1}>
-                      {flashcard.front}
-                    </Text>
-                  </TouchableOpacity>
-                )}
-                contentContainerStyle={styles.listContainer}
-              />
-            </View>
+            {recentFlashcards.length > 0 ? (
+              <View style={[styles.containerBox, { maxHeight: 262 }]}>
+                <FlatList
+                  data={recentFlashcards}
+                  keyExtractor={(item) => item.id}
+                  showsVerticalScrollIndicator={false}
+                  keyboardShouldPersistTaps="handled"
+                  ItemSeparatorComponent={() => (
+                    <View style={styles.separator} />
+                  )}
+                  renderItem={({ item: flashcard }) => (
+                    <TouchableOpacity
+                      style={styles.flashcardItem}
+                      onPress={() => {
+                        setInputText(flashcard.front);
+                        // Auto-trigger search after setting text
+                        setTimeout(() => sendMessage(), 100);
+                      }}
+                    >
+                      <Text style={styles.flashcardFront} numberOfLines={1}>
+                        {flashcard.front}
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                  contentContainerStyle={styles.listContainer}
+                />
+              </View>
+            ) : null}
           </View>
         )}
         
@@ -314,6 +328,7 @@ export default function Index() {
                 setShowRecentOverlay(false);
               }}
               onSubmitEditing={sendMessage}
+              placeholder="Type Spanish or English"
               placeholderTextColor={COLORS.GRAY}
               returnKeyType="send"
               enablesReturnKeyAutomatically={true}
@@ -474,6 +489,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-start',
     paddingTop: SPACING.LG,
     backgroundColor: COLORS.BACKGROUND,
+    
   },
   recentLabel: {
     fontSize: FONT_SIZE.LG,
@@ -486,7 +502,8 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.WHITE,
     marginHorizontal: SPACING.LG,
     borderRadius: BORDER_RADIUS.XL,
-    maxHeight: '90%',
+    
+    
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: COLORS.CARD_BORDER,
@@ -499,6 +516,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.WHITE,
     paddingHorizontal: SPACING.LG,
     paddingVertical: SPACING.LG,
+    
   },
   separator: {
     height: 1,
@@ -508,5 +526,39 @@ const styles = StyleSheet.create({
     fontSize: FONT_SIZE.LG,
     fontWeight: FONT_WEIGHT.SEMIBOLD,
     color: COLORS.DARK_GRAY,
+  },
+  emptyStateContainer: {
+    backgroundColor: COLORS.LIGHT_GRAY,
+    marginHorizontal: SPACING.LG,
+    borderRadius: BORDER_RADIUS.XL,
+    padding: SPACING.XL,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 200,
+    borderWidth: 1,
+    borderColor: COLORS.CARD_BORDER,
+  },
+  emptyStateText: {
+    fontSize: FONT_SIZE.LG,
+    color: COLORS.GRAY,
+    fontWeight: FONT_WEIGHT.MEDIUM,
+    textAlign: 'center',
+  },
+  welcomeContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  welcomeIcon: {
+    width: 120,
+    height: 120,
+  },
+  welcomeText: {
+    fontSize: FONT_SIZE.LG,
+    color: COLORS.GRAY,
+    textAlign: 'center',
+    marginTop: SPACING.LG,
+    paddingHorizontal: SPACING.LG,
+    maxWidth: '90%',
   },
 });
