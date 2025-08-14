@@ -11,10 +11,10 @@ import {
   TouchableOpacity,
   View
 } from "react-native";
-import { LoadingScreen } from "../../../components/LoadingScreen";
-import { COLORS, SPACING, BORDER_RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOW } from "../../../constants/theme";
-import { commonStyles } from "../../../styles/common";
 import FlashcardModal from "../../../components/FlashcardModal";
+import { LoadingScreen } from "../../../components/LoadingScreen";
+import { BORDER_RADIUS, COLORS, FONT_SIZE, FONT_WEIGHT, SHADOW, SPACING } from "../../../constants/theme";
+import { commonStyles } from "../../../styles/common";
 import {
   deleteFlashcard,
   Flashcard,
@@ -339,7 +339,7 @@ const styles = StyleSheet.create({
   },
   backTextContainer: {
     flex: 1,
-    justifyContent: "flex-start",
+    justifyContent: "center",
     alignItems: "stretch",
     paddingHorizontal: SPACING.XL,
     paddingVertical: SPACING.LG,

@@ -19,13 +19,6 @@ export default function FlashcardsLayout() {
         }}
       />
       <Stack.Screen
-        name="view"
-        options={{
-          title: "Flashcard View",
-          headerBackTitle: "Back",
-        }}
-      />
-      <Stack.Screen
         name="manage"
         options={{
           title: "Manage All Cards",

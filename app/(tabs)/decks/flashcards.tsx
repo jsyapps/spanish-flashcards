@@ -366,7 +366,7 @@ const styles = StyleSheet.create({
   },
   backTextContainer: {
     flex: 1,
-    justifyContent: "flex-start",
+    justifyContent: "center",
     alignItems: "stretch",
     paddingHorizontal: SPACING.XL,
     paddingVertical: SPACING.LG,

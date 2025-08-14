@@ -65,7 +65,7 @@ export default function Index() {
       Keyboard.dismiss(); // Close the keyboard
       
       try {
-        const response = await fetch('https://spanish-flashcards-8l70416kc-jsyapps-projects.vercel.app/api/chat', {
+        const response = await fetch('https://spanish-flashcards-api.vercel.app/api/chat', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
