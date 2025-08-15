@@ -264,7 +264,7 @@ const styles = StyleSheet.create({
     borderRadius: BORDER_RADIUS.XL,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: COLORS.CARD_BORDER,
+    borderColor: COLORS.LIGHT_GRAY,
     ...SHADOW.LG,
   },
   listContainer: {
@@ -305,7 +305,7 @@ const styles = StyleSheet.create({
   },
   separator: {
     height: 1,
-    backgroundColor: COLORS.CARD_BORDER,
+    backgroundColor: COLORS.LIGHT_GRAY,
     marginHorizontal: SPACING.XL,
   },
   noResultsContainer: {

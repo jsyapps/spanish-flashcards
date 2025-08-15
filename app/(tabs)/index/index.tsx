@@ -375,7 +375,7 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   userMessageBox: {
-    backgroundColor: COLORS.PRIMARY,
+    backgroundColor: COLORS.LIGHT_GRAY,
     padding: SPACING.LG,
     borderRadius: BORDER_RADIUS.XXL,
     marginBottom: SPACING.SM,
@@ -507,7 +507,7 @@ const styles = StyleSheet.create({
     
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: COLORS.CARD_BORDER,
+    borderColor: COLORS.LIGHT_GRAY,
     ...SHADOW.LG,
   },
   listContainer: {
@@ -521,7 +521,7 @@ const styles = StyleSheet.create({
   },
   separator: {
     height: 1,
-    backgroundColor: COLORS.CARD_BORDER,
+    backgroundColor: COLORS.LIGHT_GRAY,
   },
   flashcardFront: {
     fontSize: FONT_SIZE.LG,
@@ -537,7 +537,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     minHeight: 200,
     borderWidth: 1,
-    borderColor: COLORS.CARD_BORDER,
+    borderColor: COLORS.LIGHT_GRAY,
   },
   emptyStateText: {
     fontSize: FONT_SIZE.LG,
