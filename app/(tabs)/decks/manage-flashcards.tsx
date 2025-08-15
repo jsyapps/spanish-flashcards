@@ -118,9 +118,6 @@ export default function ManageFlashcardsScreen() {
           <View style={commonStyles.centerContent}>
             <Ionicons name="albums-outline" size={64} color={COLORS.EMPTY_ICON} />
             <Text style={commonStyles.emptyText}>No flashcards yet</Text>
-            <Text style={commonStyles.emptySubtext}>
-              Start a conversation in the Chat tab to create flashcards!
-            </Text>
           </View>
         ) : (
           <>

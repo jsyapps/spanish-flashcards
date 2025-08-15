@@ -11,13 +11,14 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { Deck, validateAndSaveDeck, validateAndUpdateDeck } from '../utils/storage';
+import { Deck, validateAndSaveDeck, validateAndUpdateDeck, deleteDeck } from '../utils/storage';
 
 interface DeckModalProps {
   visible: boolean;
   deck?: Deck; // If provided, this is edit mode
   onSave: () => void;
   onCancel: () => void;
+  onDelete?: (deckId: string) => void;
 }
 
 
@@ -26,6 +27,7 @@ export default function DeckModal({
   deck,
   onSave,
   onCancel,
+  onDelete,
 }: DeckModalProps) {
   const [name, setName] = useState(deck?.name || '');
   const [saving, setSaving] = useState(false);
@@ -75,6 +77,34 @@ export default function DeckModal({
     }
   };
 
+  const handleDelete = async () => {
+    if (!deck || saving) return;
+    
+    Alert.alert(
+      "Delete Deck",
+      "Are you sure you want to delete this deck? This will also remove all flashcards from this deck.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              setSaving(true);
+              await deleteDeck(deck.id);
+              onDelete?.(deck.id);
+            } catch (error) {
+              console.error('Error deleting deck:', error);
+              Alert.alert("Error", "Failed to delete deck");
+            } finally {
+              setSaving(false);
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const isValid = name.trim().length > 0;
 
   return (
@@ -89,10 +119,6 @@ export default function DeckModal({
         behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
         <View style={styles.modalContent}>
-          <Text style={styles.modalTitle}>
-            {deck ? 'Edit Deck' : 'Create New Deck'}
-          </Text>
-          
           <ScrollView showsVerticalScrollIndicator={false}>
             <Text style={styles.label}>Deck Name *</Text>
             <TextInput
@@ -109,14 +135,6 @@ export default function DeckModal({
           
           <View style={styles.modalButtons}>
             <TouchableOpacity 
-              style={[styles.modalButton, styles.cancelButton]}
-              onPress={onCancel}
-              disabled={saving}
-            >
-              <Text style={styles.cancelButtonText}>Cancel</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
               style={[
                 styles.modalButton, 
                 styles.saveButton,
@@ -129,9 +147,32 @@ export default function DeckModal({
                 styles.saveButtonText,
                 (!isValid || saving) && styles.disabledButtonText
               ]}>
-                {saving ? 'Saving...' : (deck ? 'Update' : 'Create')}
+                {saving ? 'Saving...' : (deck ? 'Save' : 'Create')}
               </Text>
             </TouchableOpacity>
+            
+            
+            
+            
+{deck ? (
+              <TouchableOpacity 
+                style={[styles.modalButton, styles.deleteButton]}
+                onPress={handleDelete}
+                disabled={saving}
+              >
+                <Text style={styles.deleteButtonText}>Delete</Text>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity 
+                style={[styles.modalButton, styles.cancelButton]}
+                onPress={onCancel}
+                disabled={saving}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+            )}
+            
+            
           </View>
         </View>
       </KeyboardAvoidingView>
@@ -152,13 +193,6 @@ const styles = StyleSheet.create({
     padding: 20,
     width: "90%",
     maxHeight: "80%",
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    marginBottom: 20,
-    textAlign: "center",
-    color: "#333",
   },
   label: {
     fontSize: 16,
@@ -215,5 +249,14 @@ const styles = StyleSheet.create({
   },
   disabledButtonText: {
     color: "#999",
+  },
+  deleteButton: {
+    backgroundColor: "#dc3545",
+  },
+  deleteButtonText: {
+    color: "white",
+    textAlign: "center",
+    fontWeight: "bold",
+    fontSize: 16,
   },
 });

@@ -36,7 +36,7 @@ export default function TabLayout() {
         options={{
           title: "Decks",
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="list" size={size} color={color} />
+            <Ionicons name="folder" size={size} color={color} />
           ),
         }}
       />

@@ -370,6 +370,7 @@ const styles = StyleSheet.create({
   responseContainer: {
     flex: 1,
     padding: SPACING.LG,
+    
   },
   scrollContent: {
     flexGrow: 1,
@@ -555,7 +556,7 @@ const styles = StyleSheet.create({
     height: 120,
   },
   welcomeText: {
-    fontSize: FONT_SIZE.LG,
+    fontSize: FONT_SIZE.XL,
     color: COLORS.GRAY,
     textAlign: 'center',
     marginTop: SPACING.LG,

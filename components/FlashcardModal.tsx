@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import {
   Alert,
@@ -11,10 +12,9 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SPACING } from '../constants/theme';
 import { commonStyles } from '../styles/common';
-import { deleteFlashcard, getDecks, getFlashcardDeckAssociations, addFlashcardToDeck, removeFlashcardFromDeck, Deck } from '../utils/storage';
+import { addFlashcardToDeck, Deck, deleteFlashcard, getDecks, getFlashcardDeckAssociations, removeFlashcardFromDeck } from '../utils/storage';
 
 interface FlashcardModalProps {
   visible: boolean;
@@ -175,7 +175,7 @@ export default function FlashcardModal({
       >
         <View style={commonStyles.modalContent}>
           <ScrollView showsVerticalScrollIndicator={false}>
-            <Text style={commonStyles.modalLabel}>Front:</Text>
+            <Text style={[commonStyles.modalLabel, { marginTop: 0 }]}>Front:</Text>
             <TextInput
               style={[commonStyles.textInput, styles.modalInput]}
               value={editableUserMessage}
@@ -256,7 +256,7 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.SM, // Add bottom margin for spacing
   },
   saveFlashcardButton: {
-    backgroundColor: COLORS.SUCCESS,
+    backgroundColor: "#007AFF",
   },
   saveFlashcardButtonText: {
     color: COLORS.WHITE,

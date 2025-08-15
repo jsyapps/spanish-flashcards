@@ -16,7 +16,6 @@ import { BORDER_RADIUS, COLORS, SHADOW, SPACING } from "../../../constants/theme
 import { commonStyles } from "../../../styles/common";
 import {
   Deck,
-  deleteDeck,
   getDeckStats,
   getDecks,
   initializeStorage
@@ -78,28 +77,6 @@ export default function DecksScreen() {
   }, [navigation]);
 
 
-  const handleDeleteDeck = async (deck: DeckWithStats) => {
-    Alert.alert(
-      "Delete Deck",
-      `Are you sure you want to delete "${deck.name}"? This will also delete all ${deck.cardCount} flashcards in this deck.`,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await deleteDeck(deck.id);
-              await loadDecks(); // Reload decks
-            } catch (error) {
-              console.error("Error deleting deck:", error);
-              Alert.alert("Error", "Failed to delete deck");
-            }
-          },
-        },
-      ]
-    );
-  };
 
   const openCreateModal = () => {
     setEditingDeck(undefined);
@@ -120,6 +97,12 @@ export default function DecksScreen() {
   const handleModalCancel = () => {
     setModalVisible(false);
     setEditingDeck(undefined);
+  };
+
+  const handleModalDelete = async (deckId: string) => {
+    setModalVisible(false);
+    setEditingDeck(undefined);
+    await loadDecks(); // Reload decks after deletion
   };
 
   const handleDeckPress = (deck: DeckWithStats) => {
@@ -144,22 +127,13 @@ export default function DecksScreen() {
         </View>
         <View style={styles.deckActions}>
           <TouchableOpacity 
-            style={styles.actionButton}
+            style={styles.dotsButton}
             onPress={(e) => {
               e.stopPropagation();
               openEditModal(item);
             }}
           >
-            <Ionicons name="pencil" size={16} color="#007AFF" />
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={styles.actionButton}
-            onPress={(e) => {
-              e.stopPropagation();
-              handleDeleteDeck(item);
-            }}
-          >
-            <Ionicons name="trash" size={16} color="#dc3545" />
+            <Ionicons name="ellipsis-horizontal" size={20} color={COLORS.GRAY} />
           </TouchableOpacity>
         </View>
       </View>
@@ -208,6 +182,7 @@ export default function DecksScreen() {
         deck={editingDeck}
         onSave={handleModalSave}
         onCancel={handleModalCancel}
+        onDelete={handleModalDelete}
       />
     </SafeAreaView>
   );
@@ -315,6 +290,9 @@ const styles = StyleSheet.create({
   actionButtonPressed: {
     backgroundColor: "#EDF2F7",
     transform: [{ scale: 0.95 }],
+  },
+  dotsButton: {
+    padding: SPACING.SM,
   },
   deckStats: {
     flexDirection: "row",

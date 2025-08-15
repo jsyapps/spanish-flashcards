@@ -203,9 +203,6 @@ export default function FlashcardsScreen() {
         <View style={commonStyles.centerContent}>
           <Ionicons name="albums-outline" size={64} color={COLORS.EMPTY_ICON} />
           <Text style={commonStyles.emptyText}>No flashcards yet</Text>
-          <Text style={commonStyles.emptySubtext}>
-            Ask about Spanish to create flashcards!
-          </Text>
         </View>
       ) : (
         <View style={styles.cardContainer}>

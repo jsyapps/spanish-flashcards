@@ -1,5 +1,5 @@
 import { StyleSheet } from 'react-native';
-import { COLORS, SPACING, BORDER_RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOW } from '../constants/theme';
+import { BORDER_RADIUS, COLORS, FONT_SIZE, FONT_WEIGHT, SHADOW, SPACING } from '../constants/theme';
 
 export const commonStyles = StyleSheet.create({
   container: {
@@ -193,8 +193,7 @@ export const commonStyles = StyleSheet.create({
     padding: SPACING.XL,
     borderRadius: BORDER_RADIUS.XL,
     marginBottom: SPACING.MD,
-    borderWidth: 1,
-    borderColor: COLORS.CARD_BORDER,
+    
     ...SHADOW.MD,
   },
   cardHover: {

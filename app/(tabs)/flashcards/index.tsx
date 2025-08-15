@@ -271,8 +271,17 @@ export default function AllFlashcardsScreen() {
           visible={editModalVisible}
           userMessage={currentCard.front}
           response={currentCard.back}
+          cardId={currentCard.id}
           onSave={(front, back) => handleEditSave(front, back, currentCard.id)}
-          onCancel={() => setEditModalVisible(false)}
+          onCancel={() => {
+            setEditModalVisible(false);
+            // Refresh flashcards after modal closes
+            loadFlashcards(false);
+          }}
+          onDeckChange={(cardId, deckIds) => {
+            // Refresh flashcards after deck associations change
+            loadFlashcards(false);
+          }}
         />
       )}
 
