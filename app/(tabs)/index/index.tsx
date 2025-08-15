@@ -277,7 +277,7 @@ export default function Index() {
           <View style={styles.recentOverlay}>
             <Text style={styles.recentLabel}>Recent Flashcards</Text>
             {recentFlashcards.length > 0 ? (
-              <View style={[styles.containerBox, { maxHeight: 262 }]}>
+              <View style={[styles.containerBox, { maxHeight: 260 }]}>
                 <FlatList
                   data={recentFlashcards}
                   keyExtractor={(item) => item.id}
@@ -506,8 +506,7 @@ const styles = StyleSheet.create({
     
     
     overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: COLORS.LIGHT_GRAY,
+    
     ...SHADOW.LG,
   },
   listContainer: {
@@ -522,6 +521,7 @@ const styles = StyleSheet.create({
   separator: {
     height: 1,
     backgroundColor: COLORS.LIGHT_GRAY,
+    marginHorizontal: SPACING.XL,
   },
   flashcardFront: {
     fontSize: FONT_SIZE.LG,

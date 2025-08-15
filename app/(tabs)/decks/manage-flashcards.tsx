@@ -17,7 +17,6 @@ import { LoadingScreen } from "../../../components/LoadingScreen";
 import { BORDER_RADIUS, COLORS, FONT_SIZE, FONT_WEIGHT, SHADOW, SPACING } from "../../../constants/theme";
 import { commonStyles } from "../../../styles/common";
 import {
-  deleteFlashcard,
   Flashcard,
   getFlashcards,
   getFlashcardsByDeck,
@@ -71,31 +70,6 @@ export default function ManageFlashcardsScreen() {
 
 
 
-  const handleDeleteFlashcard = async (id: string) => {
-    Alert.alert(
-      "Delete Flashcard",
-      "Are you sure you want to delete this flashcard?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await deleteFlashcard(id);
-              
-              // Update the local state
-              const updatedCards = flashcards.filter(card => card.id !== id);
-              setFlashcards(updatedCards);
-            } catch (error) {
-              console.error("Error deleting flashcard:", error);
-              Alert.alert("Error", "Failed to delete flashcard");
-            }
-          },
-        },
-      ]
-    );
-  };
 
   const handleEditFlashcard = (card: Flashcard) => {
     setEditingCard(card);
@@ -104,24 +78,13 @@ export default function ManageFlashcardsScreen() {
 
   const handleEditSave = async (front: string, back: string, cardId: string) => {
     try {
-      await deleteFlashcard(cardId);
-      
-      if (deckId) {
-        await saveFlashcardToDeck(front, back, deckId);
-      } else {
-        await saveFlashcard(front, back);
-      }
-      
+      // For now, just refresh the entire list after edit
+      // The actual save logic is handled by the modal
       setEditModalVisible(false);
       setEditingCard(null);
       
-      // Update the current card in the list
-      const updatedFlashcards = flashcards.map(card => 
-        card.id === cardId 
-          ? { ...card, front, back }
-          : card
-      );
-      setFlashcards(updatedFlashcards);
+      // Refresh flashcards list
+      loadFlashcards();
     } catch (error) {
       console.error('Error updating flashcard:', error);
       Alert.alert("Error", "Failed to update flashcard");
@@ -134,16 +97,10 @@ export default function ManageFlashcardsScreen() {
         <Text style={styles.frontText}>{item.front}</Text>
         <View style={styles.flashcardActions}>
           <TouchableOpacity 
-            style={styles.actionButton}
+            style={styles.dotsButton}
             onPress={() => handleEditFlashcard(item)}
           >
-            <Ionicons name="pencil" size={16} color="#007AFF" />
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={styles.actionButton}
-            onPress={() => handleDeleteFlashcard(item.id)}
-          >
-            <Ionicons name="trash" size={16} color="#dc3545" />
+            <Ionicons name="ellipsis-horizontal" size={20} color={COLORS.GRAY} />
           </TouchableOpacity>
         </View>
       </View>
@@ -218,10 +175,17 @@ export default function ManageFlashcardsScreen() {
             visible={editModalVisible}
             userMessage={editingCard.front}
             response={editingCard.back}
+            cardId={editingCard.id}
             onSave={(front, back) => handleEditSave(front, back, editingCard.id)}
             onCancel={() => {
               setEditModalVisible(false);
               setEditingCard(null);
+              // Refresh the flashcards list after modal closes
+              loadFlashcards();
+            }}
+            onDeckChange={(cardId, deckIds) => {
+              // Refresh flashcards after deck associations change
+              loadFlashcards();
             }}
           />
         )}
@@ -279,8 +243,7 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.SM,
     borderRadius: BORDER_RADIUS.XL,
     overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: COLORS.LIGHT_GRAY,
+    
     ...SHADOW.LG,
   },
   listContainer: {
@@ -318,6 +281,9 @@ const styles = StyleSheet.create({
   actionButtonPressed: {
     backgroundColor: COLORS.GRAY_200,
     transform: [{ scale: 0.95 }],
+  },
+  dotsButton: {
+    padding: SPACING.SM,
   },
   separator: {
     height: 1,
