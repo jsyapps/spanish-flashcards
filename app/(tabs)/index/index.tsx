@@ -34,6 +34,8 @@ export default function Index() {
   const [selectedDecks, setSelectedDecks] = useState<Set<string>>(new Set());
   const [recentFlashcards, setRecentFlashcards] = useState<Flashcard[]>([]);
   const [showRecentOverlay, setShowRecentOverlay] = useState(false);
+  const [selectedRecentFlashcard, setSelectedRecentFlashcard] = useState<Flashcard | null>(null);
+  const [recentFlashcardModalVisible, setRecentFlashcardModalVisible] = useState(false);
 
   const loadDecks = React.useCallback(async () => {
     try {
@@ -266,7 +268,7 @@ export default function Index() {
                 resizeMode="contain"
               />
               <Text style={styles.welcomeText}>
-                1. Ask me to translate something{'\n\n'}2. Make it into a flashcard
+                Translate → Flashcard
               </Text>
             </View>
           )}
@@ -290,9 +292,8 @@ export default function Index() {
                     <TouchableOpacity
                       style={styles.flashcardItem}
                       onPress={() => {
-                        setInputText(flashcard.front);
-                        // Auto-trigger search after setting text
-                        setTimeout(() => sendMessage(), 100);
+                        setSelectedRecentFlashcard(flashcard);
+                        setRecentFlashcardModalVisible(true);
                       }}
                     >
                       <Text style={styles.flashcardFront} numberOfLines={1}>
@@ -361,6 +362,31 @@ export default function Index() {
           }}
           onCancel={() => setModalVisible(false)}
         />
+
+        {/* Modal for editing recent flashcards */}
+        {selectedRecentFlashcard && (
+          <FlashcardModal
+            visible={recentFlashcardModalVisible}
+            userMessage={selectedRecentFlashcard.front}
+            response={selectedRecentFlashcard.back}
+            cardId={selectedRecentFlashcard.id}
+            onSave={(front, back) => {
+              setRecentFlashcardModalVisible(false);
+              setSelectedRecentFlashcard(null);
+              loadRecentFlashcards();
+            }}
+            onCancel={() => {
+              setRecentFlashcardModalVisible(false);
+              setSelectedRecentFlashcard(null);
+              setShowRecentOverlay(false);
+              setIsMainInputFocused(false);
+              loadRecentFlashcards();
+            }}
+            onDeckChange={(cardId, deckIds) => {
+              loadRecentFlashcards();
+            }}
+          />
+        )}
       </SafeAreaView>
     </KeyboardAvoidingView>
   );
