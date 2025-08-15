@@ -56,7 +56,8 @@ export const COLORS = {
   
   // Card specific
   CARD_BACKGROUND: '#FFFFFF',
-  CARD_BORDER: '#E2E8F0',
+  CARD_BORDER: '#BEE3F8', // Light blue to match index card lines
+  CARD_HEADER_BORDER: '#F56565', // Reddish pink to match index card header line
   CARD_SHADOW: 'rgba(0, 0, 0, 0.1)',
 };
 

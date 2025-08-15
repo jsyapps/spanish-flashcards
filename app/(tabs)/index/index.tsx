@@ -431,6 +431,7 @@ const styles = StyleSheet.create({
     maxHeight: 100,
     minWidth: 0,
     backgroundColor: "transparent",
+    fontSize: FONT_SIZE.LG,
   },
   searchIcon: {
     marginRight: 0,
@@ -520,7 +521,7 @@ const styles = StyleSheet.create({
   },
   separator: {
     height: 1,
-    backgroundColor: COLORS.LIGHT_GRAY,
+    backgroundColor: COLORS.CARD_BORDER,
   },
   flashcardFront: {
     fontSize: FONT_SIZE.LG,

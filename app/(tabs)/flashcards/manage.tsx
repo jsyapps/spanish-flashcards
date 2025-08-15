@@ -13,7 +13,7 @@ import {
 } from "react-native";
 import FlashcardModal from "../../../components/FlashcardModal";
 import { LoadingScreen } from "../../../components/LoadingScreen";
-import { BORDER_RADIUS, COLORS, FONT_SIZE, FONT_WEIGHT, SPACING, SHADOW } from "../../../constants/theme";
+import { BORDER_RADIUS, COLORS, FONT_SIZE, FONT_WEIGHT, SHADOW, SPACING } from "../../../constants/theme";
 import { commonStyles } from "../../../styles/common";
 import {
   deleteFlashcard,
@@ -255,7 +255,8 @@ const styles = StyleSheet.create({
     borderRadius: BORDER_RADIUS.SM,
   },
   containerBox: {
-    maxHeight: '75%',
+    
+    maxHeight: '86%',
     backgroundColor: COLORS.WHITE,
     marginHorizontal: SPACING.LG,
     marginTop: SPACING.LG,
@@ -274,7 +275,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: SPACING.XL,
-    paddingVertical: SPACING.LG,
+    paddingVertical: SPACING.SM,
     backgroundColor: COLORS.WHITE,
   },
   flashcardItemHover: {
@@ -304,7 +305,7 @@ const styles = StyleSheet.create({
   },
   separator: {
     height: 1,
-    backgroundColor: COLORS.GRAY_200,
+    backgroundColor: COLORS.CARD_BORDER,
     marginHorizontal: SPACING.XL,
   },
   noResultsContainer: {
