@@ -10,6 +10,7 @@ import {
 import { useFocusEffect } from "@react-navigation/native";
 
 import FlashcardModal from "../../../components/FlashcardModal";
+import RateLimitStatus from "../../../components/RateLimitStatus";
 import { 
   SearchBar, 
   RecentFlashcardsOverlay, 
@@ -23,6 +24,7 @@ import { useDecks, useFlashcards, useModal } from "../../../hooks";
 import { commonStyles } from "../../../styles/common";
 import { SPACING } from "../../../constants/theme";
 import { Flashcard, saveFlashcard, saveFlashcardToMultipleDecks } from "../../../utils/storage";
+import { apiService } from "../../../utils/services/apiService";
 
 export default function Index() {
   // Input and message state
@@ -76,39 +78,46 @@ export default function Index() {
   const sendMessage = useCallback(async () => {
     if (!inputText.trim()) return;
 
-    setUserMessage(inputText.trim());
+    const messageToSend = inputText.trim();
+    setUserMessage(messageToSend);
     setResponse("");
     setInputText("");
     Keyboard.dismiss();
     
     try {
-      const response = await fetch('https://spanish-flashcards-api.vercel.app/api/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer spanish-flashcards-beta-2025-fbe169127c8a16226b1f7d23261646be',
-        },
-        body: JSON.stringify({
-          message: inputText.trim(),
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
-      }
-
-      const data = await response.json();
+      const data = await apiService.sendChatMessage(messageToSend);
       setResponse(data.response);
-      setEditableFront(inputText.trim());
+      setEditableFront(messageToSend);
       setEditableBack(data.response);
       setSelectedDecks(new Set());
     } catch (error) {
       console.error('Error:', error);
+      
+      // Handle rate limit errors with more user-friendly messages
+      if (error instanceof Error && error.name === 'RateLimitError') {
+        Alert.alert(
+          "Rate Limit Exceeded",
+          error.message,
+          [
+            { text: "OK" },
+            {
+              text: "View Usage",
+              onPress: () => {
+                // The RateLimitStatus component will show detailed info
+              }
+            }
+          ]
+        );
+        // Don't show the error in the response for rate limits
+        setUserMessage("");
+        return;
+      }
+      
       const errorMessage = error instanceof Error 
-        ? `Sorry, I couldn't get a response. Error: ${error.message}`
+        ? error.message
         : "Sorry, I couldn't get a response. Please try again.";
       setResponse(errorMessage);
-      setEditableFront(inputText.trim());
+      setEditableFront(messageToSend);
       setEditableBack(errorMessage);
       setSelectedDecks(new Set());
     }
@@ -204,19 +213,26 @@ export default function Index() {
     if (userMessage) {
       if (response) {
         return (
-          <FlashcardCreationForm
-            editableFront={editableFront}
-            editableBack={editableBack}
-            onChangeFront={setEditableFront}
-            onChangeBack={setEditableBack}
-            decks={decks}
-            selectedDecks={selectedDecks}
-            onToggleDeck={toggleDeckSelection}
-            onSave={handleSaveToDeck}
-            isFrontInputFocused={isFrontInputFocused}
-            onFrontFocus={handleFrontFocus}
-            onFrontBlur={handleFrontBlur}
-          />
+          <>
+            <FlashcardCreationForm
+              editableFront={editableFront}
+              editableBack={editableBack}
+              onChangeFront={setEditableFront}
+              onChangeBack={setEditableBack}
+              decks={decks}
+              selectedDecks={selectedDecks}
+              onToggleDeck={toggleDeckSelection}
+              onSave={handleSaveToDeck}
+              isFrontInputFocused={isFrontInputFocused}
+              onFrontFocus={handleFrontFocus}
+              onFrontBlur={handleFrontBlur}
+            />
+            {/* Show detailed rate limit status when user has content */}
+            <RateLimitStatus 
+              style={{ marginTop: SPACING.LG }}
+              showDetailedInfo={false}
+            />
+          </>
         );
       } else {
         return <LoadingMessage userMessage={userMessage} />;
@@ -257,6 +273,18 @@ export default function Index() {
           style={{ flex: 1, padding: SPACING.LG }} 
           contentContainerStyle={{ flexGrow: 1 }}
         >
+          {/* Rate Limit Status - Show when not focused on input */}
+          {!isMainInputFocused && !userMessage && (
+            <RateLimitStatus 
+              compact={true}
+              style={{ 
+                position: 'absolute',
+                top: SPACING.MD,
+                right: SPACING.MD,
+                zIndex: 10
+              }}
+            />
+          )}
           {renderContent}
         </ScrollView>
         
@@ -297,7 +325,7 @@ export default function Index() {
             cardId={recentFlashcardModal.data.id}
             onSave={handleRecentFlashcardSave}
             onCancel={handleRecentFlashcardCancel}
-            onDeckChange={loadRecentFlashcards}
+            onDeckChange={() => loadRecentFlashcards()}
           />
         )}
       </SafeAreaView>
