@@ -33,6 +33,30 @@ const FLASHCARD_DECK_ASSOCIATIONS_KEY = 'flashcard_deck_associations';
 const STORAGE_VERSION_KEY = 'storage_version';
 const CURRENT_STORAGE_VERSION = '4';
 
+// Types for parsed storage data
+interface StoredFlashcard {
+  id: string;
+  front: string;
+  back: string;
+  createdAt: string; // JSON stores dates as strings
+  deckId?: string; // Legacy property
+}
+
+interface StoredDeck {
+  id: string;
+  name: string;
+  description?: string;
+  color?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface StoredFlashcardDeckAssociation {
+  flashcardId: string;
+  deckId: string;
+  addedAt: string;
+}
+
 
 export const saveFlashcard = async (front: string, back: string): Promise<void> => {
   try {
@@ -57,9 +81,9 @@ export const getFlashcards = async (): Promise<Flashcard[]> => {
   try {
     const flashcardsJson = await AsyncStorage.getItem(FLASHCARDS_KEY);
     if (flashcardsJson) {
-      const flashcards = JSON.parse(flashcardsJson);
+      const storedFlashcards: StoredFlashcard[] = JSON.parse(flashcardsJson);
       // Convert date strings back to Date objects
-      return flashcards.map((card: any) => ({
+      return storedFlashcards.map((card) => ({
         ...card,
         createdAt: new Date(card.createdAt),
       }));
@@ -119,11 +143,12 @@ export const saveDeck = async (name: string, description?: string): Promise<Deck
 export const getDecks = async (): Promise<Deck[]> => {
   try {
     const decksJson = await AsyncStorage.getItem(DECKS_KEY);
-    const userDecks = decksJson ? JSON.parse(decksJson).map((deck: any) => ({
+    const storedDecks: StoredDeck[] = decksJson ? JSON.parse(decksJson) : [];
+    const userDecks = storedDecks.map((deck) => ({
       ...deck,
       createdAt: new Date(deck.createdAt),
       updatedAt: new Date(deck.updatedAt),
-    })) : [];
+    }));
     
     return userDecks;
   } catch (error) {

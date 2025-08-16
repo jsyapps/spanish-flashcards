@@ -9,7 +9,7 @@ export default function TabLayout() {
         headerShown: false, // We'll handle headers in individual stacks
       }}
     >
-         <Tabs.Screen
+      <Tabs.Screen
         name="index"
         options={{
           title: "Ask",
@@ -18,8 +18,6 @@ export default function TabLayout() {
           ),
         }}
       />
-
-
 
       <Tabs.Screen
         name="flashcards"

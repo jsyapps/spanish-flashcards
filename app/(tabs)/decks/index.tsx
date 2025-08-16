@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { router } from "expo-router";
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import {
   Alert,
   FlatList,
@@ -12,7 +12,7 @@ import {
   View
 } from "react-native";
 import DeckModal from "../../../components/DeckModal";
-import { BORDER_RADIUS, COLORS, SHADOW, SPACING } from "../../../constants/theme";
+import { BORDER_RADIUS, COLORS, FONT_SIZE, FONT_WEIGHT, SHADOW, SPACING } from "../../../constants/theme";
 import { commonStyles } from "../../../styles/common";
 import {
   Deck,
@@ -32,7 +32,7 @@ export default function DecksScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [editingDeck, setEditingDeck] = useState<Deck | undefined>();
 
-  const loadDecks = async () => {
+  const loadDecks = useCallback(async () => {
     try {
       await initializeStorage(); // Ensure migration is complete
       const deckList = await getDecks();
@@ -54,7 +54,7 @@ export default function DecksScreen() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -78,34 +78,34 @@ export default function DecksScreen() {
 
 
 
-  const openCreateModal = () => {
+  const openCreateModal = useCallback(() => {
     setEditingDeck(undefined);
     setModalVisible(true);
-  };
+  }, []);
 
-  const openEditModal = (deck: Deck) => {
+  const openEditModal = useCallback((deck: Deck) => {
     setEditingDeck(deck);
     setModalVisible(true);
-  };
+  }, []);
 
-  const handleModalSave = async () => {
+  const handleModalSave = useCallback(async () => {
     setModalVisible(false);
     setEditingDeck(undefined);
     await loadDecks(); // Reload decks
-  };
+  }, [loadDecks]);
 
-  const handleModalCancel = () => {
+  const handleModalCancel = useCallback(() => {
     setModalVisible(false);
     setEditingDeck(undefined);
-  };
+  }, []);
 
-  const handleModalDelete = async (deckId: string) => {
+  const handleModalDelete = useCallback(async (deckId: string) => {
     setModalVisible(false);
     setEditingDeck(undefined);
     await loadDecks(); // Reload decks after deletion
-  };
+  }, [loadDecks]);
 
-  const handleDeckPress = (deck: DeckWithStats) => {
+  const handleDeckPress = useCallback((deck: DeckWithStats) => {
     router.push({
       pathname: '/decks/flashcards',
       params: { 
@@ -113,9 +113,9 @@ export default function DecksScreen() {
         title: deck.name
       }
     });
-  };
+  }, []);
 
-  const renderDeckItem = ({ item }: { item: DeckWithStats }) => (
+  const renderDeckItem = useCallback(({ item }: { item: DeckWithStats }) => (
     <TouchableOpacity 
       style={styles.deckItem}
       onPress={() => handleDeckPress(item)}
@@ -140,12 +140,12 @@ export default function DecksScreen() {
       
       <View style={styles.deckStats}>
         <View style={styles.statItem}>
-          <Ionicons name="albums" size={16} color="#666" />
+          <Ionicons name="albums" size={16} color={COLORS.GRAY_600} />
           <Text style={styles.statText}>{item.cardCount} cards</Text>
         </View>
       </View>
     </TouchableOpacity>
-  );
+  ), [handleDeckPress, openEditModal]);
 
   if (loading) {
     return (
@@ -191,94 +191,84 @@ export default function DecksScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F7FAFC",
+    backgroundColor: COLORS.BACKGROUND,
   },
   centerContent: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: 40,
-    backgroundColor: "#F7FAFC",
+    paddingHorizontal: SPACING.XXXXL,
+    backgroundColor: COLORS.BACKGROUND,
   },
   loadingText: {
-    fontSize: 18,
-    color: "#718096",
-    fontWeight: "500",
+    fontSize: FONT_SIZE.LG,
+    color: COLORS.GRAY,
+    fontWeight: FONT_WEIGHT.MEDIUM,
   },
   emptyText: {
-    fontSize: 24,
-    color: "#2D3748",
-    marginTop: 24,
+    fontSize: FONT_SIZE.XXXL,
+    color: COLORS.GRAY_800,
+    marginTop: SPACING.XXL,
     textAlign: "center",
-    fontWeight: "600",
+    fontWeight: FONT_WEIGHT.SEMIBOLD,
   },
   emptySubtext: {
-    fontSize: 16,
-    color: "#718096",
-    marginTop: 12,
+    fontSize: FONT_SIZE.LG,
+    color: COLORS.GRAY,
+    marginTop: SPACING.MD,
     textAlign: "center",
-    fontWeight: "400",
+    fontWeight: FONT_WEIGHT.REGULAR,
     lineHeight: 24,
   },
   createButton: {
-    backgroundColor: "#E53E3E",
-    paddingHorizontal: 32,
-    paddingVertical: 16,
-    borderRadius: 12,
-    marginTop: 32,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
+    backgroundColor: COLORS.DANGER,
+    paddingHorizontal: SPACING.XXXL + 2,
+    paddingVertical: SPACING.LG,
+    borderRadius: BORDER_RADIUS.LG,
+    marginTop: SPACING.XXXL + 2,
+    ...SHADOW.MD,
   },
   createButtonText: {
-    color: "white",
-    fontSize: 18,
-    fontWeight: "600",
+    color: COLORS.WHITE,
+    fontSize: FONT_SIZE.XL,
+    fontWeight: FONT_WEIGHT.SEMIBOLD,
     letterSpacing: 0.5,
   },
   listContainer: {
-    padding: 16,
+    padding: SPACING.LG,
   },
   deckItem: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 16,
+    backgroundColor: COLORS.WHITE,
+    borderRadius: BORDER_RADIUS.LG,
+    padding: SPACING.XL,
+    marginBottom: SPACING.LG,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
+    borderColor: COLORS.BORDER,
+    ...SHADOW.MD,
   },
   deckItemPressed: {
-    backgroundColor: "#F7FAFC",
+    backgroundColor: COLORS.BACKGROUND,
     transform: [{ scale: 0.98 }],
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    ...SHADOW.SM,
   },
   deckHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 16,
+    marginBottom: SPACING.LG,
   },
   deckInfo: {
     flex: 1,
     justifyContent: "center",
   },
   deckName: {
-    fontSize: 20,
-    fontWeight: "600",
-    color: "#2D3748",
+    fontSize: FONT_SIZE.XXL,
+    fontWeight: FONT_WEIGHT.SEMIBOLD,
+    color: COLORS.GRAY_800,
     letterSpacing: 0.3,
   },
   deckActions: {
     flexDirection: "row",
-    gap: 12,
+    gap: SPACING.MD,
   },
   actionButton: {
     padding: SPACING.MD,
@@ -288,7 +278,7 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   actionButtonPressed: {
-    backgroundColor: "#EDF2F7",
+    backgroundColor: COLORS.GRAY_200,
     transform: [{ scale: 0.95 }],
   },
   dotsButton: {
@@ -302,23 +292,23 @@ const styles = StyleSheet.create({
   statItem: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
-    backgroundColor: "#F7FAFC",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
+    gap: SPACING.SM,
+    backgroundColor: COLORS.BACKGROUND,
+    paddingHorizontal: SPACING.MD,
+    paddingVertical: SPACING.XS + 2,
+    borderRadius: BORDER_RADIUS.SM,
   },
   statText: {
-    fontSize: 15,
-    color: "#4A5568",
-    fontWeight: "500",
+    fontSize: FONT_SIZE.MD + 1,
+    color: COLORS.GRAY_600,
+    fontWeight: FONT_WEIGHT.MEDIUM,
   },
   createdDate: {
-    fontSize: 12,
-    color: "#999",
+    fontSize: FONT_SIZE.SM,
+    color: COLORS.GRAY_500,
   },
   headerButton: {
-    marginRight: 16,
-    padding: 4,
+    marginRight: SPACING.LG,
+    padding: SPACING.XS,
   },
 });
