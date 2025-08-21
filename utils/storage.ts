@@ -467,7 +467,14 @@ export const createDefaultDecksIfNeeded = async (): Promise<void> => {
     await new Promise(resolve => setTimeout(resolve, 100));
     
     // Create Mexican slang deck second (will be newer and appear on top)
-    await saveDeck('🇲🇽 Mexican slang', 'Learn Mexican Spanish slang terms');
+    const mexicanDeck = await saveDeck('🇲🇽 Mexican slang', 'Learn Mexican Spanish slang terms');
+    
+    // Add sample flashcards to Mexican slang deck
+    await saveFlashcardToDeck('¿Qué onda, güey?', "What's up, dude?", mexicanDeck.id);
+    await saveFlashcardToDeck('No mames, güey', "No way, dude!", mexicanDeck.id);
+    await saveFlashcardToDeck('Qué padre', "How cool!", mexicanDeck.id);
+    await saveFlashcardToDeck('Vete a la verga', "Way to go!", mexicanDeck.id);
+    await saveFlashcardToDeck('Está cabrón', "That's tough/crazy!", mexicanDeck.id);
     
     // Mark that default decks have been created
     await AsyncStorage.setItem('default_decks_created', 'true');

@@ -1,5 +1,5 @@
 {
-  "name": "spanish_flashcards",
+  "name": "flashcard-amigo",
   "main": "expo-router/entry",
   "version": "1.0.0",
   "scripts": {
