@@ -22,12 +22,6 @@ export const commonStyles = StyleSheet.create({
     marginTop: SPACING.LG,
     textAlign: 'center',
   },
-  emptySubtext: {
-    fontSize: FONT_SIZE.MD,
-    color: COLORS.GRAY,
-    marginTop: SPACING.SM,
-    textAlign: 'center',
-  },
   // Enhanced Button styles
   primaryButton: {
     backgroundColor: COLORS.PRIMARY,

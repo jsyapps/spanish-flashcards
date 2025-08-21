@@ -32,6 +32,7 @@ const DECKS_KEY = 'decks';
 const FLASHCARD_DECK_ASSOCIATIONS_KEY = 'flashcard_deck_associations';
 const STORAGE_VERSION_KEY = 'storage_version';
 const CURRENT_STORAGE_VERSION = '4';
+const SHUFFLED_ORDER_PREFIX = 'shuffled_order_';
 
 // Types for parsed storage data
 interface StoredFlashcard {
@@ -449,6 +450,33 @@ export const createDefaultDeck = async (): Promise<Deck> => {
   }
 };
 
+export const createDefaultDecksIfNeeded = async (): Promise<void> => {
+  try {
+    // Check if default decks have ever been created (first install flag)
+    const defaultDecksCreated = await AsyncStorage.getItem('default_decks_created');
+    
+    if (defaultDecksCreated === 'true') {
+      // Default decks were already created once, don't recreate them
+      return;
+    }
+    
+    // Create English deck first (will be older)
+    await saveDeck('🇺🇸 English', 'Learn basic English vocabulary');
+    
+    // Small delay to ensure different timestamps
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    // Create Mexican slang deck second (will be newer and appear on top)
+    await saveDeck('🇲🇽 Mexican slang', 'Learn Mexican Spanish slang terms');
+    
+    // Mark that default decks have been created
+    await AsyncStorage.setItem('default_decks_created', 'true');
+  } catch (error) {
+    console.error('Error creating default decks:', error);
+    // Don't throw - this shouldn't break initialization
+  }
+};
+
 export const migrateToDecks = async (): Promise<void> => {
   try {
     const currentVersion = await getStorageVersion();
@@ -540,6 +568,7 @@ export const migrateToDecks = async (): Promise<void> => {
 export const initializeStorage = async (): Promise<void> => {
   try {
     await migrateToDecks();
+    await createDefaultDecksIfNeeded();
   } catch (error) {
     console.error('Error initializing storage:', error);
     throw error;
@@ -661,4 +690,50 @@ export const validateAndUpdateDeck = async (
     console.error('Error validating and updating deck:', error);
     return { success: false, error: 'Failed to update deck' };
   }
+};
+
+// Shuffled Order Management
+export const getShuffledCardOrder = async (orderKey: string): Promise<string[] | null> => {
+  try {
+    const stored = await AsyncStorage.getItem(SHUFFLED_ORDER_PREFIX + orderKey);
+    return stored ? JSON.parse(stored) : null;
+  } catch (error) {
+    console.error('Error getting shuffled card order:', error);
+    return null;
+  }
+};
+
+export const setShuffledCardOrder = async (orderKey: string, cardIds: string[]): Promise<void> => {
+  try {
+    await AsyncStorage.setItem(SHUFFLED_ORDER_PREFIX + orderKey, JSON.stringify(cardIds));
+  } catch (error) {
+    console.error('Error setting shuffled card order:', error);
+  }
+};
+
+export const clearShuffledCardOrder = async (orderKey: string): Promise<void> => {
+  try {
+    await AsyncStorage.removeItem(SHUFFLED_ORDER_PREFIX + orderKey);
+  } catch (error) {
+    console.error('Error clearing shuffled card order:', error);
+  }
+};
+
+export const applyShuffledOrder = (cards: Flashcard[], cardIds: string[]): Flashcard[] => {
+  const cardMap = new Map(cards.map(card => [card.id, card]));
+  const orderedCards: Flashcard[] = [];
+  
+  // Add cards in the saved order
+  for (const cardId of cardIds) {
+    const card = cardMap.get(cardId);
+    if (card) {
+      orderedCards.push(card);
+      cardMap.delete(cardId);
+    }
+  }
+  
+  // Add any new cards that weren't in the saved order
+  orderedCards.push(...cardMap.values());
+  
+  return orderedCards;
 };

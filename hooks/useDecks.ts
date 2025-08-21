@@ -40,7 +40,13 @@ export const useDecks = (): UseDecksResult => {
       
       await initializeStorage();
       const deckList = await getDecks();
-      setDecks(deckList);
+      
+      // Sort by most recent (updatedAt) first
+      const sortedDecks = deckList.sort((a, b) => 
+        new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+      );
+      
+      setDecks(sortedDecks);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to load decks';
       setError(errorMessage);

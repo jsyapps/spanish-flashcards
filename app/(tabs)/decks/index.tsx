@@ -1,9 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { router } from "expo-router";
-import React, { useState, useCallback } from "react";
+import React, { useCallback, useState } from "react";
 import {
-  Alert,
   FlatList,
   SafeAreaView,
   StyleSheet,
@@ -48,7 +47,12 @@ export default function DecksScreen() {
         })
       );
       
-      setDecks(decksWithStats);
+      // Sort by most recent (updatedAt) first
+      const sortedDecks = decksWithStats.sort((a, b) => 
+        new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+      );
+      
+      setDecks(sortedDecks);
     } catch (error) {
       console.error("Error loading decks:", error);
     } finally {
@@ -163,9 +167,7 @@ export default function DecksScreen() {
         <View style={commonStyles.centerContent}>
           <Ionicons name="list-outline" size={64} color={COLORS.EMPTY_ICON} />
           <Text style={commonStyles.emptyText}>No decks yet</Text>
-          <Text style={commonStyles.emptySubtext}>
-            Create your first deck to organize your flashcards!
-          </Text>
+          
         </View>
       ) : (
         <FlatList
@@ -211,14 +213,6 @@ const styles = StyleSheet.create({
     marginTop: SPACING.XXL,
     textAlign: "center",
     fontWeight: FONT_WEIGHT.SEMIBOLD,
-  },
-  emptySubtext: {
-    fontSize: FONT_SIZE.LG,
-    color: COLORS.GRAY,
-    marginTop: SPACING.MD,
-    textAlign: "center",
-    fontWeight: FONT_WEIGHT.REGULAR,
-    lineHeight: 24,
   },
   createButton: {
     backgroundColor: COLORS.DANGER,

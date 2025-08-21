@@ -62,7 +62,13 @@ export default function FlashcardModal({
       
       // Load all decks
       const allDecks = await getDecks();
-      setDecks(allDecks);
+      
+      // Sort by most recent (updatedAt) first
+      const sortedDecks = allDecks.sort((a, b) => 
+        new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+      );
+      
+      setDecks(sortedDecks);
       
       // Load current deck associations for this flashcard
       const associations = await getFlashcardDeckAssociations();

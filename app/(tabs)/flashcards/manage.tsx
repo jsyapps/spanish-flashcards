@@ -137,9 +137,6 @@ export default function ManageAllFlashcardsScreen() {
               <View style={styles.noResultsContainer}>
                 <Ionicons name="search-outline" size={48} color={COLORS.EMPTY_ICON} />
                 <Text style={styles.noResultsText}>No matching flashcards</Text>
-                <Text style={styles.noResultsSubtext}>
-                  Try a different search term
-                </Text>
               </View>
             ) : (
               <View style={styles.containerBox}>
@@ -289,13 +286,6 @@ const styles = StyleSheet.create({
     fontWeight: FONT_WEIGHT.SEMIBOLD,
     color: COLORS.GRAY_600,
     marginTop: SPACING.LG,
-    textAlign: "center",
-  },
-  noResultsSubtext: {
-    fontSize: FONT_SIZE.LG,
-    fontWeight: FONT_WEIGHT.REGULAR,
-    color: COLORS.GRAY_500,
-    marginTop: SPACING.SM,
     textAlign: "center",
   },
 });

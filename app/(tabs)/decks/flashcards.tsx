@@ -16,13 +16,17 @@ import { LoadingScreen } from "../../../components/LoadingScreen";
 import { BORDER_RADIUS, COLORS, FONT_SIZE, FONT_WEIGHT, SHADOW, SPACING } from "../../../constants/theme";
 import { commonStyles } from "../../../styles/common";
 import {
+  applyShuffledOrder,
+  clearShuffledCardOrder,
   deleteFlashcard,
   Flashcard,
   getFlashcards,
   getFlashcardsByDeck,
+  getShuffledCardOrder,
   initializeStorage,
   saveFlashcard,
-  saveFlashcardToDeck
+  saveFlashcardToDeck,
+  setShuffledCardOrder
 } from "../../../utils/storage";
 
 export default function FlashcardsScreen() {
@@ -34,6 +38,7 @@ export default function FlashcardsScreen() {
   const [showBack, setShowBack] = useState(false);
   const [showAllBacks, setShowAllBacks] = useState(false);
   const [editModalVisible, setEditModalVisible] = useState(false);
+  const [hasShuffledOnLoad, setHasShuffledOnLoad] = useState(false);
 
   const shuffleArray = (array: Flashcard[]) => {
     const shuffled = [...array];
@@ -44,7 +49,7 @@ export default function FlashcardsScreen() {
     return shuffled;
   };
 
-  const loadFlashcards = React.useCallback(async (shouldShuffle = true) => {
+  const loadFlashcards = React.useCallback(async (forceReshuffle = false) => {
     try {
       await initializeStorage();
       let cards: Flashcard[];
@@ -55,20 +60,50 @@ export default function FlashcardsScreen() {
         cards = await getFlashcardsByDeck(deckId);
       }
       
-      const finalCards = shouldShuffle ? shuffleArray(cards) : cards;
+      const orderKey = deckId ? `deck_${deckId}` : 'all_flashcards';
+      let finalCards: Flashcard[];
+      
+      if (forceReshuffle) {
+        // Force reshuffle - clear saved order and create new one
+        await clearShuffledCardOrder(orderKey);
+        finalCards = shuffleArray(cards);
+        await setShuffledCardOrder(orderKey, finalCards.map(card => card.id));
+        setCurrentIndex(0);
+        setHasShuffledOnLoad(true);
+      } else {
+        // Check for saved shuffled order
+        const savedOrder = await getShuffledCardOrder(orderKey);
+        
+        if (savedOrder && hasShuffledOnLoad) {
+          // Use saved shuffled order
+          finalCards = applyShuffledOrder(cards, savedOrder);
+          // Preserve current position
+          setCurrentIndex(prev => Math.min(prev, Math.max(0, finalCards.length - 1)));
+        } else if (!hasShuffledOnLoad) {
+          // First load - shuffle and save order
+          finalCards = shuffleArray(cards);
+          await setShuffledCardOrder(orderKey, finalCards.map(card => card.id));
+          setCurrentIndex(0);
+          setHasShuffledOnLoad(true);
+        } else {
+          // Fallback to original order
+          finalCards = cards;
+          setCurrentIndex(prev => Math.min(prev, Math.max(0, finalCards.length - 1)));
+        }
+      }
+      
       setFlashcards(finalCards);
-      setCurrentIndex(0);
       setShowBack(showAllBacks);
     } catch (error) {
       console.error("Error loading flashcards:", error);
     } finally {
       setLoading(false);
     }
-  }, [deckId, showAllBacks]);
+  }, [deckId, showAllBacks, hasShuffledOnLoad]);
 
   useFocusEffect(
     React.useCallback(() => {
-      loadFlashcards(true);
+      loadFlashcards(false);
     }, [loadFlashcards])
   );
 
@@ -150,6 +185,15 @@ export default function FlashcardsScreen() {
       setCurrentIndex(currentIndex + 1);
       setShowBack(showAllBacks);
     }
+  };
+
+  const handleReshuffle = () => {
+    Alert.alert(
+      "End of deck reached!",
+      "Deck has been shuffled.",
+      [{ text: "OK" }]
+    );
+    loadFlashcards(true);
   };
 
   const goToPreviousCard = () => {
@@ -263,14 +307,17 @@ export default function FlashcardsScreen() {
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[commonStyles.outlineButton, currentIndex === flashcards.length - 1 && commonStyles.outlineButtonDisabled]}
-              onPress={goToNextCard}
-              disabled={currentIndex === flashcards.length - 1}
+              style={[
+                commonStyles.outlineButton,
+                currentIndex === flashcards.length - 1 && { borderColor: COLORS.SUCCESS }
+              ]}
+              onPress={currentIndex === flashcards.length - 1 ? handleReshuffle : goToNextCard}
             >
               <Ionicons 
-                name="chevron-forward" 
+                name={currentIndex === flashcards.length - 1 ? "refresh" : "chevron-forward"} 
                 size={24} 
-                color={currentIndex === flashcards.length - 1 ? COLORS.DISABLED : COLORS.PRIMARY} 
+                color={currentIndex === flashcards.length - 1 ? COLORS.SUCCESS : COLORS.PRIMARY}
+                style={currentIndex === flashcards.length - 1 ? { transform: [{ scaleX: -1 }] } : undefined}
               />
             </TouchableOpacity>
           </View>
