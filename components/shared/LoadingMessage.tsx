@@ -31,7 +31,7 @@ LoadingMessage.displayName = 'LoadingMessage';
 
 const styles = StyleSheet.create({
   userMessageBox: {
-    backgroundColor: COLORS.LIGHT_GRAY,
+    backgroundColor: COLORS.PRIMARY,
     padding: SPACING.LG,
     borderRadius: BORDER_RADIUS.XXL,
     marginBottom: SPACING.SM,

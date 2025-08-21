@@ -198,11 +198,28 @@ export const deleteDeck = async (id: string): Promise<void> => {
     
     await AsyncStorage.setItem(DECKS_KEY, JSON.stringify(updatedDecks));
     
-    // Remove all associations with this deck
+    // Get all associations to find orphaned flashcards
     const associations = await getFlashcardDeckAssociations();
-    const updatedAssociations = associations.filter(assoc => assoc.deckId !== id);
+    const associationsToDelete = associations.filter(assoc => assoc.deckId === id);
+    const flashcardIdsInDeletedDeck = associationsToDelete.map(assoc => assoc.flashcardId);
     
+    // Remove all associations with this deck
+    const updatedAssociations = associations.filter(assoc => assoc.deckId !== id);
     await AsyncStorage.setItem(FLASHCARD_DECK_ASSOCIATIONS_KEY, JSON.stringify(updatedAssociations));
+    
+    // Find flashcards that are now orphaned (not associated with any remaining deck)
+    const orphanedFlashcardIds = flashcardIdsInDeletedDeck.filter(flashcardId => 
+      !updatedAssociations.some(assoc => assoc.flashcardId === flashcardId)
+    );
+    
+    // Remove orphaned flashcards from all flashcards storage
+    if (orphanedFlashcardIds.length > 0) {
+      const existingFlashcards = await getFlashcards();
+      const updatedFlashcards = existingFlashcards.filter(
+        flashcard => !orphanedFlashcardIds.includes(flashcard.id)
+      );
+      await AsyncStorage.setItem(FLASHCARDS_KEY, JSON.stringify(updatedFlashcards));
+    }
   } catch (error) {
     console.error('Error deleting deck:', error);
     throw error;

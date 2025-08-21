@@ -201,11 +201,6 @@ export default function AllFlashcardsScreen() {
                   </Text>
                 </View>
               )}
-              <View style={styles.flipHintContainer}>
-                <Text style={styles.flipHint}>
-                  {showBack ? "Tap to see front" : "Tap to see back"}
-                </Text>
-              </View>
             </TouchableOpacity>
           </View>
 

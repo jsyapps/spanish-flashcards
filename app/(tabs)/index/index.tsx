@@ -10,7 +10,6 @@ import {
 import { useFocusEffect } from "@react-navigation/native";
 
 import FlashcardModal from "../../../components/FlashcardModal";
-import RateLimitStatus from "../../../components/RateLimitStatus";
 import { 
   SearchBar, 
   RecentFlashcardsOverlay, 
@@ -98,15 +97,7 @@ export default function Index() {
         Alert.alert(
           "Rate Limit Exceeded",
           error.message,
-          [
-            { text: "OK" },
-            {
-              text: "View Usage",
-              onPress: () => {
-                // The RateLimitStatus component will show detailed info
-              }
-            }
-          ]
+          [{ text: "OK" }]
         );
         // Don't show the error in the response for rate limits
         setUserMessage("");
@@ -227,11 +218,6 @@ export default function Index() {
               onFrontFocus={handleFrontFocus}
               onFrontBlur={handleFrontBlur}
             />
-            {/* Show detailed rate limit status when user has content */}
-            <RateLimitStatus 
-              style={{ marginTop: SPACING.LG }}
-              showDetailedInfo={false}
-            />
           </>
         );
       } else {
@@ -273,18 +259,6 @@ export default function Index() {
           style={{ flex: 1, padding: SPACING.LG }} 
           contentContainerStyle={{ flexGrow: 1 }}
         >
-          {/* Rate Limit Status - Show when not focused on input */}
-          {!isMainInputFocused && !userMessage && (
-            <RateLimitStatus 
-              compact={true}
-              style={{ 
-                position: 'absolute',
-                top: SPACING.MD,
-                right: SPACING.MD,
-                zIndex: 10
-              }}
-            />
-          )}
           {renderContent}
         </ScrollView>
         
