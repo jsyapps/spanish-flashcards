@@ -18,8 +18,7 @@ import { commonStyles } from "../../../styles/common";
 import {
   Flashcard,
   getFlashcards,
-  initializeStorage,
-  saveFlashcard
+  initializeStorage
 } from "../../../utils/storage";
 
 export default function ManageAllFlashcardsScreen() {
@@ -106,9 +105,7 @@ export default function ManageAllFlashcardsScreen() {
           <View style={commonStyles.centerContent}>
             <Ionicons name="albums-outline" size={64} color={COLORS.EMPTY_ICON} />
             <Text style={commonStyles.emptyText}>No flashcards yet</Text>
-            <Text style={commonStyles.emptySubtext}>
-              Start a conversation in the Ask tab to create flashcards!
-            </Text>
+           
           </View>
         ) : (
           <>
@@ -118,7 +115,7 @@ export default function ManageAllFlashcardsScreen() {
                 <Ionicons name="search" size={20} color={COLORS.GRAY} style={styles.searchIcon} />
                 <TextInput
                   style={styles.searchInput}
-                  placeholder="Search flashcards..."
+                  placeholder="Search"
                   placeholderTextColor={COLORS.GRAY}
                   value={searchQuery}
                   onChangeText={setSearchQuery}

@@ -20,9 +20,7 @@ import {
   Flashcard,
   getFlashcards,
   getFlashcardsByDeck,
-  initializeStorage,
-  saveFlashcard,
-  saveFlashcardToDeck
+  initializeStorage
 } from "../../../utils/storage";
 
 export default function ManageFlashcardsScreen() {
@@ -127,7 +125,7 @@ export default function ManageFlashcardsScreen() {
                 <Ionicons name="search" size={20} color={COLORS.GRAY} style={styles.searchIcon} />
                 <TextInput
                   style={styles.searchInput}
-                  placeholder="Search flashcards..."
+                  placeholder="Search"
                   placeholderTextColor={COLORS.GRAY}
                   value={searchQuery}
                   onChangeText={setSearchQuery}

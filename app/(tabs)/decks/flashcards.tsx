@@ -164,29 +164,21 @@ export default function FlashcardsScreen() {
     setEditModalVisible(true);
   };
 
-  const handleEditSave = async (front: string, back: string, cardId: string) => {
-    try {
-      await deleteFlashcard(cardId);
-      
-      if (deckId) {
-        await saveFlashcardToDeck(front, back, deckId);
-      } else {
-        await saveFlashcard(front, back);
-      }
-      
-      setEditModalVisible(false);
-      
-      // Update the current card in place instead of reloading all flashcards
-      const updatedFlashcards = [...flashcards];
-      updatedFlashcards[currentIndex] = {
-        ...updatedFlashcards[currentIndex],
-        front,
-        back
-      };
-      setFlashcards(updatedFlashcards);
-    } catch (error) {
-      console.error('Error updating flashcard:', error);
-    }
+  const handleEditSave = () => {
+    setEditModalVisible(false);
+    // Refresh flashcards after modal closes
+    loadFlashcards(false);
+  };
+
+  const handleEditCancel = () => {
+    setEditModalVisible(false);
+    // Refresh flashcards after modal closes
+    loadFlashcards(false);
+  };
+
+  const handleDeckChange = () => {
+    // Refresh flashcards after deck associations change
+    loadFlashcards(false);
   };
 
 
@@ -290,8 +282,10 @@ export default function FlashcardsScreen() {
           visible={editModalVisible}
           userMessage={currentCard.front}
           response={currentCard.back}
-          onSave={(front, back) => handleEditSave(front, back, currentCard.id)}
-          onCancel={() => setEditModalVisible(false)}
+          cardId={currentCard.id}
+          onSave={handleEditSave}
+          onCancel={handleEditCancel}
+          onDeckChange={handleDeckChange}
         />
       )}
 
